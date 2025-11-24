@@ -20,7 +20,7 @@ jobs:
     if: >
       github.event_name == 'workflow_dispatch' ||
       github.event_name == 'pull_request'
-    runs-on: gaudi
+    runs-on: hpu
     env:
       NAMESPACE: "llm-d-gaudi-is"
       GATEWAY_TYPE: "istio"
