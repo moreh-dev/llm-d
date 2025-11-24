@@ -6,11 +6,13 @@ on:
       - 'guides/inference-scheduling/ms-inference-scheduling/values-gaudi.yaml'
       - 'guides/inference-scheduling/gaie-inference-scheduling/**'
       - 'guides/inference-scheduling/helmfile.yaml.gotmpl'
+      - '.github/workflows/e2e-inference-scheduling-gaudi.yaml'
   pull_request:
     paths:
       - 'guides/inference-scheduling/ms-inference-scheduling/values-gaudi.yaml'
       - 'guides/inference-scheduling/gaie-inference-scheduling/**'
       - 'guides/inference-scheduling/helmfile.yaml.gotmpl'
+      - '.github/workflows/e2e-inference-scheduling-gaudi.yaml'
   workflow_dispatch:
     inputs:
       pr_or_branch:
