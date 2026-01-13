@@ -58,9 +58,9 @@ ARG FLASHINFER_REPO="https://github.com/flashinfer-ai/flashinfer.git"
 ARG FLASHINFER_VERSION="v0.5.2"
 
 # vLLM build settings
-ARG VLLM_REPO="https://github.com/neuralmagic/vllm.git"
-ARG VLLM_COMMIT_SHA="llm-d-release-0.4"
-ARG VLLM_PRECOMPILED_WHEEL_COMMIT="75648b16ddce1bff02c39c6f06be62a58385ff52"
+ARG VLLM_REPO="https://github.com/wseaton/vllm.git"
+ARG VLLM_COMMIT_SHA="graceful-shutdown"
+ARG VLLM_PRECOMPILED_WHEEL_COMMIT="4f02cb2eac20a1281784914acca80cd1fe2bfd15"
 ARG VLLM_PREBUILT=0
 ARG VLLM_USE_PRECOMPILED=1
 
@@ -142,7 +142,7 @@ ENV NVSHMEM_DIR="/opt/nvshmem-${NVSHMEM_VERSION}" \
     EFA_PREFIX="/opt/amazon/efa" \
     UCX_PREFIX="/opt/ucx" \
     NIXL_PREFIX="/opt/nixl"
-    
+
 ENV PATH="${NVSHMEM_DIR}/bin:${VIRTUAL_ENV}/bin:${PATH}" \
     LIBRARY_PATH="${EFA_PREFIX}/lib:${EFA_PREFIX}/lib64:${UCX_PREFIX}/lib:${UCX_PREFIX}/lib64:${NVSHMEM_DIR}/lib:${NVSHMEM_DIR}/lib64:${CUDA_HOME}/lib64:/usr/local/lib:/usr/local/lib64" \
     CPATH="${NVSHMEM_DIR}/include:/usr/include:/usr/local/include:${CUDA_HOME}/include:${CPATH}" \
