@@ -1,6 +1,6 @@
-ARG CUDA_MAJOR=12
-ARG CUDA_MINOR=9
-ARG CUDA_PATCH=1
+ARG CUDA_MAJOR=13
+ARG CUDA_MINOR=0
+ARG CUDA_PATCH=0
 ARG TARGETOS=rhel
 ARG BASE_IMAGE_SUFFIX=ubi9
 
@@ -14,9 +14,9 @@ ARG FINAL_BASE_IMAGE_SUFFIX=${BASE_IMAGE_SUFFIX}
 
 ######################## SYSTEM CONFIGURATION ########################
 
-ARG CUDA_MAJOR=12
-ARG CUDA_MINOR=9
-ARG CUDA_PATCH=1
+ARG CUDA_MAJOR=13
+ARG CUDA_MINOR=0
+ARG CUDA_PATCH=0
 ARG TARGETOS=rhel
 ARG TARGETPLATFORM=linux/amd64
 ARG BASE_IMAGE_SUFFIX=ubi9
@@ -48,8 +48,8 @@ ARG LMCACHE_REPO="https://github.com/LMCache/LMCache.git"
 ARG LMCACHE_VERSION="v0.3.8"
 
 # Kernels
-ARG DEEPEP_REPO="https://github.com/smarterclayton/DeepEP"
-ARG DEEPEP_VERSION="nic_pe_alignment"
+ARG DEEPEP_REPO="https://github.com/elvircrn/DeepEP"
+ARG DEEPEP_VERSION="llm-d"
 ARG DEEPGEMM_REPO="https://github.com/deepseek-ai/DeepGEMM"
 ARG DEEPGEMM_VERSION="v2.1.0"
 ARG PPLX_KERNELS_REPO="https://github.com/perplexityai/pplx-kernels"
@@ -59,7 +59,7 @@ ARG FLASHINFER_VERSION="v0.5.2"
 
 # vLLM build settings
 ARG VLLM_REPO="https://github.com/neuralmagic/vllm.git"
-ARG VLLM_COMMIT_SHA="llm-d-release-0.4"
+ARG VLLM_COMMIT_SHA="nvl72"
 ARG VLLM_PRECOMPILED_WHEEL_COMMIT="75648b16ddce1bff02c39c6f06be62a58385ff52"
 ARG VLLM_PREBUILT=0
 ARG VLLM_USE_PRECOMPILED=1
