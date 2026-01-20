@@ -10,7 +10,7 @@ ARG PYTHON_VERSION=3.12
 ARG PIP_EXTRA_INDEX_URL="https://download.pytorch.org/whl/cpu/"
 ARG VLLM_REPO="https://github.com/vllm-project/vllm.git"
 # Pin to a commit SHA1/Tag
-ARG VLLM_COMMIT=v0.14.0
+ARG VLLM_VERSION=v0.14.0
 ARG TARGETARCH
 # Support for building with non-AVX512 vLLM
 ARG VLLM_CPU_DISABLE_AVX512=0
@@ -18,6 +18,26 @@ ARG VLLM_CPU_DISABLE_AVX512=0
 ARG VLLM_CPU_AVX512BF16=0
 # Support for building with AVX512VNNI ISA
 ARG VLLM_CPU_AVX512VNNI=0
+
+RUN apt clean && apt-get update -y && \
+    apt-get install -y --no-install-recommends --fix-missing \
+    curl \
+    git \
+    wget \
+    vim
+
+RUN apt-get install -y ca-certificates && update-ca-certificates
+
+
+# Clone vLLM and build for CPU
+WORKDIR /workspace
+RUN --mount=type=cache,target=/var/cache/git \
+    git clone "${VLLM_REPO}" /workspace/vllm && \
+    git -C /workspace/vllm config --system --add safe.directory /workspace/vllm && \
+    git -C /workspace/vllm fetch --depth=1 origin "${VLLM_VERSION}" || true && \
+    git -C /workspace/vllm checkout -q "${VLLM_VERSION}"
+
+WORKDIR /workspace/vllm
 
 # Install system dependencies and uv
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
