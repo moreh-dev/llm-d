@@ -320,19 +320,12 @@ RUN TARGETOS=${TARGETOS} /tmp/install-runtime-packages.sh && \
 COPY --from=builder /opt/amazon/efa /opt/amazon/efa/
 
 # Copy efa libs from builder (install-efa.sh)
+# Ubuntu does not build EFA, dummy empty folder
 COPY --from=builder /tmp/efa_libs /tmp/efa_libs
-RUN if [ -d /tmp/efa_libs ]; then \
-        if [ "${TARGETOS:-rhel}" = "ubuntu" ]; then \
-            if [ "${TARGETPLATFORM:-linux/amd64}" = "linux/arm64" ]; then \
-                cp -a /tmp/efa_libs/* /usr/lib/aarch64-linux-gnu/ || true; \
-            else \
-                cp -a /tmp/efa_libs/* /usr/lib/x86_64-linux-gnu/ || true; \
-            fi; \
-        else \
-            cp -a /tmp/efa_libs/* /usr/lib64/ || true; \
-        fi; \
-        rm -rf /tmp/efa_libs; \
-    fi
+RUN if [ "${TARGETOS:-rhel}" = "rhel" ] && [ -d /tmp/efa_libs ]; then \
+        cp -a /tmp/efa_libs/* /usr/lib64/ || true; \
+    fi && \
+    rm -rf /tmp/efa_libs
 
 # Copy gdrcopy libraries from builder
 # Install to /usr/local/lib (always present) and multiarch lib dir

@@ -14,7 +14,7 @@ set -Eeu
 
 if [ "$TARGETOS" = "ubuntu" ]; then
     echo "Ubuntu image needs to be built against Ubuntu 20.04 and EFA only supports 22.04 and 24.04."
-    mkdir -p "${EFA_PREFIX}"
+    mkdir -p "${EFA_PREFIX}" /tmp/efa_libs
     exit 0
 fi
 
@@ -53,27 +53,10 @@ ldconfig
 rm -rf "${EFA_WORKDIR}"
 
 # new EFA installer puts libefa.so.1 in different locations depending on OS:
-# - RHEL/UBI: /usr/lib64
-# - Ubuntu: /usr/lib/x86_64-linux-gnu or /usr/lib/aarch64-linux-gnu
+# - RHEL/UBI: /lib64
 mkdir -p /tmp/efa_libs
-if [ "$TARGETOS" = "ubuntu" ]; then
-    if [ "${TARGETPLATFORM:-linux/amd64}" = "linux/arm64" ]; then
-        if [ -f /usr/lib/aarch64-linux-gnu/libefa.so.1 ]; then
-            cp -a /usr/lib/aarch64-linux-gnu/libefa.so* /tmp/efa_libs/ || true
-        fi
-    else
-        if [ -f /usr/lib/x86_64-linux-gnu/libefa.so.1 ]; then
-            cp -a /usr/lib/x86_64-linux-gnu/libefa.so* /tmp/efa_libs/ || true
-        fi
-    fi
-    cleanup_packages ubuntu
-elif [ "$TARGETOS" = "rhel" ]; then
-    if [ -f /lib64/libefa.so.1 ]; then
-        cp -a /lib64/libefa.so* /tmp/efa_libs/ || true
-    fi
-    cleanup_packages rhel
-    ensure_unregistered
-else
-    echo "ERROR: Unsupported TARGETOS='$TARGETOS'. Must be 'ubuntu' or 'rhel'." >&2
-    exit 1
+if [ -f /lib64/libefa.so.1 ]; then
+    cp -a /lib64/libefa.so* /tmp/efa_libs/ || true
 fi
+cleanup_packages rhel
+ensure_unregistered
