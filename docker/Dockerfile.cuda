@@ -320,7 +320,7 @@ RUN TARGETOS=${TARGETOS} /tmp/install-runtime-packages.sh && \
 COPY --from=builder /opt/amazon/efa /opt/amazon/efa/
 
 # Copy efa libs from builder (install-efa.sh)
-# Ubuntu does not build EFA, dummy empty folder
+# Ubuntu does not build EFA
 COPY --from=builder /tmp/efa_libs /tmp/efa_libs
 RUN if [ "${TARGETOS:-rhel}" = "rhel" ] && [ -d /tmp/efa_libs ]; then \
         cp -a /tmp/efa_libs/* /usr/lib64/ || true; \

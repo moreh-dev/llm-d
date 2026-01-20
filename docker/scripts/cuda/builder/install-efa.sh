@@ -14,6 +14,7 @@ set -Eeu
 
 if [ "$TARGETOS" = "ubuntu" ]; then
     echo "Ubuntu image needs to be built against Ubuntu 20.04 and EFA only supports 22.04 and 24.04."
+    # Create empty folder so Dockerfile COPY don't fail on Ubuntu
     mkdir -p "${EFA_PREFIX}" /tmp/efa_libs
     exit 0
 fi
@@ -52,11 +53,16 @@ cd "${EFA_WORKDIR}/aws-efa-installer" && ./efa_installer.sh --skip-kmod --no-ver
 ldconfig
 rm -rf "${EFA_WORKDIR}"
 
-# new EFA installer puts libefa.so.1 in different locations depending on OS:
-# - RHEL/UBI: /lib64
+# Copy all EFA-installed libs to runtime
+# - libefa.so*
+# - libibverbs.so*
+# - librdmacm.so*
 mkdir -p /tmp/efa_libs
-if [ -f /lib64/libefa.so.1 ]; then
-    cp -a /lib64/libefa.so* /tmp/efa_libs/ || true
-fi
+for efalib in libefa libibverbs librdmacm; do
+    if ls /lib64/${efalib}.so* >/dev/null 2>&1; then
+        cp -a /lib64/${efalib}.so* /tmp/efa_libs/ || true
+    fi
+done
+
 cleanup_packages rhel
 ensure_unregistered
