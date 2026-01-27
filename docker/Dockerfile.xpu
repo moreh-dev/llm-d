@@ -1,6 +1,6 @@
 ARG ONEAPI_VERSION=2025.2.2-0
 ARG VLLM_REPO="https://github.com/vllm-project/vllm.git"
-ARG VLLM_COMMIT_SHA="72506c98349d6bcd32b4e33eec7b5513453c1502"
+ARG VLLM_COMMIT_SHA="b17039bccc17b94a2ea107272ad7bc93508708df"
 
 FROM intel/deep-learning-essentials:${ONEAPI_VERSION}-devel-ubuntu24.04 AS vllm-base
 

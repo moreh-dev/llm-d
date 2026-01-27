@@ -10,7 +10,7 @@ ARG PYTHON_VERSION=3.12
 ARG PIP_EXTRA_INDEX_URL="https://download.pytorch.org/whl/cpu/"
 ARG VLLM_REPO="https://github.com/vllm-project/vllm.git"
 # Pin to a commit SHA1/Tag
-ARG VLLM_VERSION=v0.14.0
+ARG VLLM_COMMIT_SHA="b17039bccc17b94a2ea107272ad7bc93508708df"
 ARG TARGETARCH
 # Support for building with non-AVX512 vLLM
 ARG VLLM_CPU_DISABLE_AVX512=0
@@ -34,8 +34,8 @@ WORKDIR /workspace
 RUN --mount=type=cache,target=/var/cache/git \
     git clone "${VLLM_REPO}" /workspace/vllm && \
     git -C /workspace/vllm config --system --add safe.directory /workspace/vllm && \
-    git -C /workspace/vllm fetch --depth=1 origin "${VLLM_VERSION}" || true && \
-    git -C /workspace/vllm checkout -q "${VLLM_VERSION}"
+    git -C /workspace/vllm fetch --depth=1 origin "${VLLM_COMMIT_SHA}" || true && \
+    git -C /workspace/vllm checkout -q "${VLLM_COMMIT_SHA}"
 
 WORKDIR /workspace/vllm
 
@@ -67,7 +67,7 @@ WORKDIR /workspace
 RUN --mount=type=cache,target=/var/cache/git \
     git clone ${VLLM_REPO} vllm && \
     cd vllm && \
-    git checkout ${VLLM_COMMIT}
+    git checkout ${VLLM_COMMIT_SHA}
 
 # Install Python dependencies
 WORKDIR /workspace/vllm
