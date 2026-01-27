@@ -16,7 +16,7 @@ set -Eeu
 
 # default VLLM_PRECOMPILED_WHEEL_COMMIT to VLLM_COMMIT_SHA if not set
 VLLM_PRECOMPILED_WHEEL_COMMIT="${VLLM_PRECOMPILED_WHEEL_COMMIT:-${VLLM_COMMIT_SHA}}"
-
+VLLM_BRANCH_NAME="feature/IPL-Fault-Tolerance_Milestone_1"
 # build list of packages to install
 # flashinfer-cubin/jit-cache are pre-built wheels (building from source times out)
 FLASHINFER_WHEEL_VERSION="${FLASHINFER_VERSION#v}"
@@ -34,8 +34,8 @@ fi
 # clone vllm repository
 git clone "${VLLM_REPO}" /opt/vllm-source
 git -C /opt/vllm-source config --system --add safe.directory /opt/vllm-source
-git -C /opt/vllm-source fetch --depth=1 origin "${VLLM_COMMIT_SHA}" || true
-git -C /opt/vllm-source checkout -q "${VLLM_COMMIT_SHA}"
+git -C /opt/vllm-source fetch --depth=1 origin "${VLLM_BRANCH_NAME}" || true
+git -C /opt/vllm-source checkout -q "${VLLM_BRANCH_NAME}"
 
 # detect if prebuilt wheel exists (using VLLM_PRECOMPILED_WHEEL_COMMIT for lookup)
 # note: vllm wheel index structure isn't pip-compatible, so we scrape the HTML directly
