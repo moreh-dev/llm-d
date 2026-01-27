@@ -29,6 +29,9 @@ CUDA_VERSION ?= 12.8
 CUDA_MAJOR := $(word 1,$(subst ., ,$(CUDA_VERSION)))
 CUDA_MINOR := $(word 2,$(subst ., ,$(CUDA_VERSION)))
 
+# USE_SCCACHE: set to true to enable sccache (requires AWS credentials)
+USE_SCCACHE ?= false
+
 # Map OS to base image suffix
 ifeq ($(OS), ubuntu)
 	BASE_IMAGE_SUFFIX := ubuntu24.04
@@ -123,6 +126,7 @@ image-build: check-container-tool ## Build Docker image using $(CONTAINER_TOOL)
 		--build-arg TARGETOS=$(OS) \
 		--build-arg BUILD_BASE_IMAGE_SUFFIX=$(BUILD_BASE_IMAGE_SUFFIX) \
 		--build-arg FINAL_BASE_IMAGE_SUFFIX=$(BASE_IMAGE_SUFFIX) \
+		--build-arg USE_SCCACHE=$(USE_SCCACHE) \
 		-t $(IMG) -f $(DOCKERFILE_DIR)/$(DOCKERFILE) .
 
 .PHONY: image-push
@@ -239,6 +243,7 @@ env:
 	@echo "OS=$(OS)"
 	@echo "CUDA_VERSION=$(CUDA_VERSION) ($(CUDA_MAJOR).$(CUDA_MINOR))"
 	@echo "BASE_IMAGE_SUFFIX=$(BASE_IMAGE_SUFFIX)"
+	@echo "USE_SCCACHE=$(USE_SCCACHE)"
 	@echo "IMG=$(IMG)"
 	@echo "CONTAINER_TOOL=$(CONTAINER_TOOL)"
 
