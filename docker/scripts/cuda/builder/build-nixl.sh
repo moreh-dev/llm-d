@@ -41,7 +41,7 @@ meson setup build \
     --prefix="${NIXL_PREFIX}" \
     -Dbuildtype=release \
     -Ducx_path="${UCX_PREFIX}" \
-    "${EFA_FLAG}" \
+    ${EFA_FLAG:+"$EFA_FLAG"} \
     -Dinstall_headers=true
 
 cd build
