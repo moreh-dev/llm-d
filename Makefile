@@ -18,6 +18,25 @@ NEW_TAG ?= sha256...
 # DEVICE, options: ['cuda', 'xpu', 'cpu']
 DEVICE ?= cuda
 
+# ARCH, options: ['amd64', 'arm64']
+ARCH ?= amd64
+
+# OS, options: ['rhel', 'ubuntu']
+OS ?= rhel
+
+# CUDA version (e.g., 12.8, 13.0)
+CUDA_VERSION ?= 12.8
+CUDA_MAJOR := $(word 1,$(subst ., ,$(CUDA_VERSION)))
+CUDA_MINOR := $(word 2,$(subst ., ,$(CUDA_VERSION)))
+
+# Map OS to base image suffix
+ifeq ($(OS), ubuntu)
+	BASE_IMAGE_SUFFIX := ubuntu24.04
+else
+	BASE_IMAGE_SUFFIX := ubi9
+endif
+BUILD_BASE_IMAGE_SUFFIX := $(BASE_IMAGE_SUFFIX)
+
 IMAGE_BASE ?= ghcr.io/llm-d/$(PROJECT_NAME)-$(DEVICE)
 
 # BUILD_TYPE, options ['dev', 'prod']
@@ -26,20 +45,24 @@ ifeq ($(BUILD_TYPE), dev)
 	IMAGE_BASE := $(IMAGE_BASE)-dev
 endif
 
-IMG := $(IMAGE_BASE):$(VERSION)
+IMG := $(IMAGE_BASE):$(VERSION)-$(ARCH)
 
 CONTAINER_TOOL := $(shell (command -v docker >/dev/null 2>&1 && echo docker) || (command -v podman >/dev/null 2>&1 && echo podman) || echo "")
 BUILDER := $(shell command -v buildah >/dev/null 2>&1 && echo buildah || echo $(CONTAINER_TOOL))
-PLATFORMS ?= linux/amd64 # linux/arm64 # linux/s390x,linux/ppc64le
 
 .PHONY: help
 help: ## Print help
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
+	@printf "\n\033[1mArchitecture Examples:\033[0m\n"
+	@printf "  \033[36mmake image-build ARCH=amd64\033[0m                              # Build for x86_64 (default)\n"
+	@printf "  \033[36mmake image-build ARCH=arm64\033[0m                              # Build for ARM64\n"
+	@printf "  \033[36mmake image-build ARCH=arm64 OS=ubuntu\033[0m                    # ARM64 with Ubuntu base\n"
+	@printf "  \033[36mmake image-build ARCH=arm64 OS=ubuntu CUDA_VERSION=13.0\033[0m  # ARM64, Ubuntu, CUDA 13\n"
 	@printf "\n\033[1mXPU Build Examples:\033[0m\n"
 	@printf "  \033[36mmake image-build DEVICE=xpu\033[0m                    # Build Intel XPU Docker image\n"
 	@printf "  \033[36mmake image-build DEVICE=xpu VERSION=v0.2.0\033[0m     # Build with specific version\n"
 	@printf "  \033[36mmake image-push DEVICE=xpu\033[0m                     # Push Intel XPU Docker image\n"
-	@printf "  \033[36mmake image-retag DEVICE=xpu NEW_TAG=test\033[0m                     # Re-Tag Intel XPU Docker image\n"
+	@printf "  \033[36mmake image-retag DEVICE=xpu NEW_TAG=test\033[0m       # Re-Tag Intel XPU Docker image\n"
 	@printf "  \033[36mmake env DEVICE=xpu\033[0m                            # Show XPU environment variables\n"
 
 ##@ Development
@@ -70,35 +93,21 @@ build: ##
 buildah-build: check-builder ## Build and push image (multi-arch if supported)
 	@echo "✅ Using builder: $(BUILDER)"
 	@if [ "$(BUILDER)" = "buildah" ]; then \
-	  echo "🔧 Buildah detected: Performing multi-arch build with $(DOCKERFILE_DIR)/$(DOCKERFILE)…"; \
-	  FINAL_TAG=$(IMG); \
-	  for arch in amd64; do \
-		ARCH_TAG=$$FINAL_TAG-$$arch; \
-	    echo "📦 Building for architecture: $$arch"; \
-		buildah build --file $(DOCKERFILE_DIR)/$(DOCKERFILE) --arch=$$arch --os=linux --layers -t $(IMG)-$$arch . || exit 1; \
-	    echo "🚀 Pushing image: $(IMG)-$$arch"; \
-	    buildah push $(IMG)-$$arch docker://$(IMG)-$$arch || exit 1; \
-	  done; \
-	  echo "🧼 Removing existing manifest (if any)..."; \
-	  buildah manifest rm $$FINAL_TAG || true; \
-	  echo "🧱 Creating and pushing manifest list: $(IMG)"; \
-	  buildah manifest create $(IMG); \
-	  for arch in amd64; do \
-	    ARCH_TAG=$$FINAL_TAG-$$arch; \
-	    buildah manifest add $$FINAL_TAG $$ARCH_TAG; \
-	  done; \
-	  buildah manifest push --all $(IMG) docker://$(IMG); \
+	  echo "🔧 Buildah detected: Building for $(ARCH) with $(DOCKERFILE_DIR)/$(DOCKERFILE)…"; \
+	  buildah build --file $(DOCKERFILE_DIR)/$(DOCKERFILE) --arch=$(ARCH) --os=linux --layers -t $(IMG) . || exit 1; \
+	  echo "🚀 Pushing image: $(IMG)"; \
+	  buildah push $(IMG) docker://$(IMG) || exit 1; \
 	elif [ "$(BUILDER)" = "docker" ]; then \
-	  echo "🐳 Docker detected: Building with buildx..."; \
+	  echo "🐳 Docker detected: Building with buildx for linux/$(ARCH)..."; \
 	  sed -e '1 s/\(^FROM\)/FROM --platform=$${BUILDPLATFORM}/' $(DOCKERFILE_DIR)/$(DOCKERFILE) >$(DOCKERFILE_DIR)/Dockerfile.cross; \
 	  - docker buildx create --use --name image-builder || true; \
 	  docker buildx use image-builder; \
-	  docker buildx build --push --platform=$(PLATFORMS) --tag $(IMG) -f $(DOCKERFILE_DIR)/Dockerfile.cross . || exit 1; \
+	  docker buildx build --push --platform=linux/$(ARCH) --tag $(IMG) -f $(DOCKERFILE_DIR)/Dockerfile.cross . || exit 1; \
 	  docker buildx rm image-builder || true; \
 	  rm $(DOCKERFILE_DIR)/Dockerfile.cross; \
 	elif [ "$(BUILDER)" = "podman" ]; then \
-	  echo "⚠️ Podman detected: Building single-arch image..."; \
-	  podman build --format=docker -f $(DOCKERFILE_DIR)/$(DOCKERFILE) -t $(IMG) . || exit 1; \
+	  echo "⚠️ Podman detected: Building for linux/$(ARCH)..."; \
+	  podman build --platform=linux/$(ARCH) --format=docker -f $(DOCKERFILE_DIR)/$(DOCKERFILE) -t $(IMG) . || exit 1; \
 	  podman push $(IMG) || exit 1; \
 	else \
 	  echo "❌ No supported container tool available."; \
@@ -107,8 +116,14 @@ buildah-build: check-builder ## Build and push image (multi-arch if supported)
 
 .PHONY:	image-build
 image-build: check-container-tool ## Build Docker image using $(CONTAINER_TOOL)
-	@printf "\033[33;1m==== Building Docker image $(IMG) ====\033[0m\n"
-	$(CONTAINER_TOOL) build --progress=plain --platform $(PLATFORMS) -t $(IMG) -f $(DOCKERFILE_DIR)/$(DOCKERFILE) .
+	@printf "\033[33;1m==== Building Docker image $(IMG) for linux/$(ARCH) ====\033[0m\n"
+	$(CONTAINER_TOOL) build --progress=plain --platform linux/$(ARCH) \
+		--build-arg CUDA_MAJOR=$(CUDA_MAJOR) \
+		--build-arg CUDA_MINOR=$(CUDA_MINOR) \
+		--build-arg TARGETOS=$(OS) \
+		--build-arg BUILD_BASE_IMAGE_SUFFIX=$(BUILD_BASE_IMAGE_SUFFIX) \
+		--build-arg FINAL_BASE_IMAGE_SUFFIX=$(BASE_IMAGE_SUFFIX) \
+		-t $(IMG) -f $(DOCKERFILE_DIR)/$(DOCKERFILE) .
 
 .PHONY: image-push
 image-push: check-container-tool ## Push Docker image $(IMG) to registry
@@ -220,6 +235,10 @@ uninstall-rbac: check-kubectl check-kustomize check-envsubst ## Uninstall RBAC
 env:
 	@echo "IMAGE_BASE=$(IMAGE_BASE)"
 	@echo "VERSION=$(VERSION)"
+	@echo "ARCH=$(ARCH)"
+	@echo "OS=$(OS)"
+	@echo "CUDA_VERSION=$(CUDA_VERSION) ($(CUDA_MAJOR).$(CUDA_MINOR))"
+	@echo "BASE_IMAGE_SUFFIX=$(BASE_IMAGE_SUFFIX)"
 	@echo "IMG=$(IMG)"
 	@echo "CONTAINER_TOOL=$(CONTAINER_TOOL)"
 
