@@ -26,8 +26,11 @@ cd /tmp
 
 # Meson 1.3.0+ reads CMAKE_*_COMPILER_LAUNCHER env vars directly.
 # Ensure they're unset if sccache isn't ready.
+echo "DEBUG: SCCACHE_READY=${SCCACHE_READY:-unset}"
+echo "DEBUG: CMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER:-unset}"
 if [ "${SCCACHE_READY:-false}" != "true" ]; then
     unset CMAKE_C_COMPILER_LAUNCHER CMAKE_CXX_COMPILER_LAUNCHER CMAKE_CUDA_COMPILER_LAUNCHER
+    echo "DEBUG: after unset CMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER:-unset}"
 else
     export CC="sccache gcc" CXX="sccache g++" NVCC="sccache nvcc"
 fi
