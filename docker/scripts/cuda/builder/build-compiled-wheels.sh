@@ -65,7 +65,7 @@ uv build --wheel --no-build-isolation --out-dir /wheels
 cd ..
 rm -rf pplx-kernels
 
-if [ "${USE_SCCACHE}" = "true" ]; then
+if [ "${SCCACHE_READY:-false}" = "true" ]; then
   echo "=== Compiled wheels build complete - sccache stats ==="
   sccache --show-stats
 fi

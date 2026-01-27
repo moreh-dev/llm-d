@@ -19,7 +19,7 @@ cd /tmp
 . /usr/local/bin/setup-sccache
 . "${VIRTUAL_ENV}/bin/activate"
 
-if [ "${USE_SCCACHE}" = "true" ]; then
+if [ "${SCCACHE_READY:-false}" = "true" ]; then
     export CC="sccache gcc" CXX="sccache g++" NVCC="sccache nvcc"
 fi
 
@@ -35,7 +35,7 @@ uv build --wheel --no-build-isolation --out-dir /wheels  && \
 cd ..
 rm -rf lmcache
 
-if [ "${USE_SCCACHE}" = "true" ]; then
+if [ "${SCCACHE_READY:-false}" = "true" ]; then
     echo "=== LMCache and Infinistore build complete - sccache stats ==="
     sccache --show-stats
 fi

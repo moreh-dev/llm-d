@@ -27,7 +27,7 @@ cd /tmp
 git clone "${NIXL_REPO}" nixl && cd nixl
 git checkout -q "${NIXL_VERSION}"
 
-if [ "${USE_SCCACHE}" = "true" ]; then
+if [ "${SCCACHE_READY:-false}" = "true" ]; then
     export CC="sccache gcc" CXX="sccache g++" NVCC="sccache nvcc"
 fi
 

@@ -85,7 +85,7 @@ cp "${NVSHMEM_DIR}"/lib/python/dist/nvshmem4py_cu"${CUDA_MAJOR}"-*-cp"${PYTHON_V
 cd /tmp
 rm -rf nvshmem_src*
 
-if [ "${USE_SCCACHE}" = "true" ]; then
+if [ "${SCCACHE_READY:-false}" = "true" ]; then
     echo "=== NVSHMEM build complete - sccache stats ==="
     sccache --show-stats
 fi

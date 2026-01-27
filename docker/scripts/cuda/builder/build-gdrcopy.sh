@@ -42,7 +42,7 @@ esac
 git clone "${GDRCOPY_REPO}" gdrcopy && cd gdrcopy
 git checkout -q "${GDRCOPY_VERSION}"
 
-if [ "${USE_SCCACHE}" = "true" ]; then
+if [ "${SCCACHE_READY:-false}" = "true" ]; then
     export CC="sccache gcc" CXX="sccache g++"
 fi
 
@@ -57,7 +57,7 @@ ldconfig
 cd ..
 rm -rf gdrcopy
 
-if [ "${USE_SCCACHE}" = "true" ]; then
+if [ "${SCCACHE_READY:-false}" = "true" ]; then
     echo "=== gdrcopy build complete - sccache stats ==="
     sccache --show-stats
 fi

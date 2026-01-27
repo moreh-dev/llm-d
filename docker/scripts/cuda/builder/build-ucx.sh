@@ -22,8 +22,8 @@ cd /tmp
 git clone "${UCX_REPO}" ucx && cd ucx
 git checkout -q "${UCX_VERSION}" 
 
-if [ "${USE_SCCACHE}" = "true" ]; then
-    export CC="sccache gcc" CXX="sccache g++" 
+if [ "${SCCACHE_READY:-false}" = "true" ]; then
+    export CC="sccache gcc" CXX="sccache g++"
 fi
 
 # Ubuntu image needs to be built against Ubuntu 20.04 and EFA only supports 22.04 and 24.04.
@@ -53,7 +53,7 @@ ldconfig
 
 cd /tmp && rm -rf /tmp/ucx 
 
-if [ "${USE_SCCACHE}" = "true" ]; then
+if [ "${SCCACHE_READY:-false}" = "true" ]; then
     echo "=== UCX build complete - sccache stats ==="
     sccache --show-stats
 fi
