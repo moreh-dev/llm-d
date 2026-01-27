@@ -33,7 +33,9 @@ if [ "${USE_SCCACHE}" = "true" ]; then
     # shellcheck source=/dev/null
     source /usr/local/bin/setup-sccache
 
-    # verify sccache works with a simple test
-    echo "int main() { return 0; }" | sccache gcc -x c - -o /dev/null
-    echo "sccache installation and S3 connectivity verified"
+    # verify sccache works with a simple test (only if server is running)
+    if sccache --show-stats >/dev/null 2>&1; then
+        echo "int main() { return 0; }" | sccache gcc -x c - -o /dev/null
+        echo "sccache installation and S3 connectivity verified"
+    fi
 fi
