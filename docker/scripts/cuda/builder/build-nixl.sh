@@ -24,12 +24,16 @@ cd /tmp
 . /usr/local/bin/setup-sccache
 . "${VIRTUAL_ENV}/bin/activate"
 
-git clone "${NIXL_REPO}" nixl && cd nixl
-git checkout -q "${NIXL_VERSION}"
-
-if [ "${SCCACHE_READY:-false}" = "true" ]; then
+# Meson 1.3.0+ reads CMAKE_*_COMPILER_LAUNCHER env vars directly.
+# Ensure they're unset if sccache isn't ready.
+if [ "${SCCACHE_READY:-false}" != "true" ]; then
+    unset CMAKE_C_COMPILER_LAUNCHER CMAKE_CXX_COMPILER_LAUNCHER CMAKE_CUDA_COMPILER_LAUNCHER
+else
     export CC="sccache gcc" CXX="sccache g++" NVCC="sccache nvcc"
 fi
+
+git clone "${NIXL_REPO}" nixl && cd nixl
+git checkout -q "${NIXL_VERSION}"
 
 # Ubuntu image needs to be built against Ubuntu 20.04 and EFA only supports 22.04 and 24.04.
 EFA_FLAG=""
