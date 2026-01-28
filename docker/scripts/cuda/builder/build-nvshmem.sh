@@ -76,7 +76,7 @@ cmake \
     ${EFA_FLAGS[@]} \
     ..
 
-ninja -j"$(nproc)"
+ninja -j"${MAX_JOBS:-$(nproc)}"
 ninja install
 
 # copy python wheel to /wheels
