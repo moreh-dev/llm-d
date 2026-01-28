@@ -32,6 +32,12 @@ CUDA_MINOR := $(word 2,$(subst ., ,$(CUDA_VERSION)))
 # USE_SCCACHE: set to true to enable sccache (requires AWS credentials)
 USE_SCCACHE ?= false
 
+# MAX_JOBS: parallel compilation jobs (reduce to avoid OOM, e.g., MAX_JOBS=2)
+MAX_JOBS ?= 4
+
+# TORCH_CUDA_ARCH_LIST: CUDA architectures to build for (e.g., "10.0f" for GB200)
+TORCH_CUDA_ARCH_LIST ?= 9.0a;10.0
+
 # Map OS to base image suffix
 ifeq ($(OS), ubuntu)
 	BASE_IMAGE_SUFFIX := ubuntu24.04
@@ -127,6 +133,8 @@ image-build: check-container-tool ## Build Docker image using $(CONTAINER_TOOL)
 		--build-arg BUILD_BASE_IMAGE_SUFFIX=$(BUILD_BASE_IMAGE_SUFFIX) \
 		--build-arg FINAL_BASE_IMAGE_SUFFIX=$(BASE_IMAGE_SUFFIX) \
 		--build-arg USE_SCCACHE=$(USE_SCCACHE) \
+		--build-arg MAX_JOBS=$(MAX_JOBS) \
+		--build-arg TORCH_CUDA_ARCH_LIST="$(TORCH_CUDA_ARCH_LIST)" \
 		-t $(IMG) -f $(DOCKERFILE_DIR)/$(DOCKERFILE) .
 
 .PHONY: image-push
