@@ -49,8 +49,8 @@ ARG LMCACHE_REPO="https://github.com/LMCache/LMCache.git"
 ARG LMCACHE_VERSION="v0.3.8"
 
 # Kernels
-ARG DEEPEP_REPO="https://github.com/smarterclayton/DeepEP"
-ARG DEEPEP_VERSION="nic_pe_alignment"
+ARG DEEPEP_REPO="https://github.com/fzyzcjy/DeepEP"
+ARG DEEPEP_VERSION="gb200_blog_part_2"
 ARG DEEPGEMM_REPO="https://github.com/deepseek-ai/DeepGEMM"
 ARG DEEPGEMM_VERSION="v2.1.0"
 ARG PPLX_KERNELS_REPO="https://github.com/perplexityai/pplx-kernels"
