@@ -49,7 +49,7 @@ spec:
             emptyDir: {}
         containers:
         - name: vllm
-          image: ghcr.io/llm-d/llm-d-cuda-dev@sha256:9415eaf456002e8a1f14c60cf69858308a247cf7ca91cb022b322f58184cebbd
+          image: ghcr.io/llm-d/llm-d-cuda-dev@sha256:e7270f2e84b191332719bcd96b1fd34d942e088e8e1f9a03f3a1a66eed4694d0
           securityContext:
             capabilities:
               add:
