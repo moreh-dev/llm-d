@@ -73,14 +73,12 @@ cmake \
     -DNVSHMEM_USE_NCCL=0 \
     -DNVSHMEM_BUILD_TESTS=0 \
     -DNVSHMEM_BUILD_EXAMPLES=0 \
+    -DNVSHMEM_BUILD_PYTHON=0 \
     ${EFA_FLAGS[@]} \
     ..
 
 ninja -j"$(nproc)"
 ninja install
-
-# copy python wheel to /wheels
-cp "${NVSHMEM_DIR}"/lib/python/dist/nvshmem4py_cu"${CUDA_MAJOR}"-*-cp"${PYTHON_VERSION/./}"-cp"${PYTHON_VERSION/./}"-manylinux*.whl /wheels/
 
 cd /tmp
 rm -rf nvshmem_src*
