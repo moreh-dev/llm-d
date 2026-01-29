@@ -1,5 +1,5 @@
 ARG CUDA_MAJOR=12
-ARG CUDA_MINOR=9
+ARG CUDA_MINOR=8
 ARG CUDA_PATCH=1
 ARG TARGETOS=rhel
 ARG BASE_IMAGE_SUFFIX=ubi9
@@ -15,7 +15,7 @@ ARG FINAL_BASE_IMAGE_SUFFIX=${BASE_IMAGE_SUFFIX}
 ######################## SYSTEM CONFIGURATION ########################
 
 ARG CUDA_MAJOR=12
-ARG CUDA_MINOR=9
+ARG CUDA_MINOR=8
 ARG CUDA_PATCH=1
 ARG TARGETOS=rhel
 ARG TARGETPLATFORM=linux/amd64
@@ -75,6 +75,13 @@ ARG VLLM_COMMIT_SHA
 ARG VLLM_PRECOMPILED_WHEEL_COMMIT
 ARG VLLM_PREBUILT
 ARG VLLM_USE_PRECOMPILED
+# vLLM build settings
+# Commit on feature branch in my repo.
+ARG VLLM_REPO="https://github.com/jtechapps/vllm-1.git"
+ARG VLLM_COMMIT_SHA="279e534f57bf77e4a35ecb2908a6adf7c382e00f"
+ARG VLLM_PRECOMPILED_WHEEL_COMMIT="72506c98349d6bcd32b4e33eec7b5513453c1502"
+ARG VLLM_PREBUILT=1
+ARG VLLM_USE_PRECOMPILED=1
 
 # ============================================================================
 # BUILD STAGE - Install build dependencies and create wheels
