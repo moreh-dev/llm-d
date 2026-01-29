@@ -1,7 +1,7 @@
 #!/bin/bash
 set -Eeu
 
-# builds compiled extension wheels (FlashInfer, DeepEP, DeepGEMM, pplx-kernels)
+# builds compiled extension wheels (FlashInfer, DeepEP, DeepGEMM)
 #
 # Required environment variables:
 # - VIRTUAL_ENV: path to Python virtual environment
@@ -13,8 +13,6 @@ set -Eeu
 # - DEEPEP_VERSION: DeepEP version tag
 # - DEEPGEMM_REPO: DeepGEMM repository URL
 # - DEEPGEMM_VERSION: DeepGEMM version tag
-# - PPLX_KERNELS_REPO: pplx-kernels repository URL
-# - PPLX_KERNELS_VERSION: pplx-kernels commit SHA
 # - USE_SCCACHE: whether to use sccache (true/false)
 # - TARGETPLATFORM: Docker buildx platform (e.g., linux/amd64, linux/arm64)
 
@@ -61,13 +59,6 @@ git submodule update --init --recursive
 uv build --wheel --no-build-isolation --out-dir /wheels
 cd ..
 rm -rf deepgemm
-
-git clone "${PPLX_KERNELS_REPO}" pplx-kernels
-cd pplx-kernels
-git checkout "${PPLX_KERNELS_VERSION}"
-uv build --wheel --no-build-isolation --out-dir /wheels
-cd ..
-rm -rf pplx-kernels
 
 if [ "${USE_SCCACHE}" = "true" ]; then
   echo "=== Compiled wheels build complete - sccache stats ==="
