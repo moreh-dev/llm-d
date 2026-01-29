@@ -20,7 +20,17 @@ cd /tmp
 . "${VIRTUAL_ENV}/bin/activate"
 
 if [ "${USE_SCCACHE}" = "true" ]; then
-    export CC="sccache gcc" CXX="sccache g++" NVCC="sccache nvcc"
+    export CC="gcc" CXX="g++" NVCC="nvcc"
+    # Create wrapper dir
+    WRAPDIR=/tmp/sccache-wrappers
+    mkdir -p "$WRAPDIR"
+
+    # Make "gcc/g++" invoke sccache
+    ln -sf "$(command -v sccache)" "$WRAPDIR/gcc"
+    ln -sf "$(command -v sccache)" "$WRAPDIR/g++"
+
+    # Put wrappers first
+    export PATH="$WRAPDIR:$PATH"
 fi
 
 git clone "${INFINISTORE_REPO}" infinistore && cd infinistore
