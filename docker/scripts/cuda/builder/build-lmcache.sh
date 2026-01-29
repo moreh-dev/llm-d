@@ -19,6 +19,9 @@ cd /tmp
 . /usr/local/bin/setup-sccache
 . "${VIRTUAL_ENV}/bin/activate"
 
+# PyTorch cpp_extension doesn't recognize "10.0f" syntax, normalize to standard format
+export TORCH_CUDA_ARCH_LIST="${TORCH_CUDA_ARCH_LIST//10.0f/10.0}"
+
 if [ "${USE_SCCACHE}" = "true" ]; then
     export CC="sccache gcc" CXX="sccache g++" NVCC="sccache nvcc"
 fi
