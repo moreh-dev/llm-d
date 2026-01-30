@@ -467,7 +467,7 @@ RUN mkdir -p "$LLM_D_MODELS_DIR" "$HF_HOME" && \
     find /var/lib/llm-d -type d -exec chmod g+s {} \; && \
     ln -snf /var/lib/llm-d/models /models
 
-ENV PATH="${VIRTUAL_ENV}/bin:/usr/local/nvidia/bin:${PATH}" \
+ENV PATH="${VIRTUAL_ENV}/bin:${CUDA_HOME}/bin:/usr/local/nvidia/bin:${PATH}" \
     HOME=/home/vllm \
     VLLM_USAGE_SOURCE=production-docker-image \
     VLLM_WORKER_MULTIPROC_METHOD=fork \
