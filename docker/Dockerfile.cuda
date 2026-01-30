@@ -293,7 +293,7 @@ ARG VLLM_COMMIT_SHA="72506c98349d6bcd32b4e33eec7b5513453c1502"
 
 # vllm commit to use for precompiled wheel lookup (defaults to VLLM_COMMIT_SHA)
 # useful for testing feature branches with python-only changes against merge-base binaries
-ARG VLLM_PRECOMPILED_WHEEL_COMMIT="75648b16ddce1bff02c39c6f06be62a58385ff52"
+ARG VLLM_PRECOMPILED_WHEEL_COMMIT="72506c98349d6bcd32b4e33eec7b5513453c1502"
 
 # Dictates if we should pull a production wheel for the vllm commit sha
 ARG VLLM_PREBUILT=1
