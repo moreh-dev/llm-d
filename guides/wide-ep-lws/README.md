@@ -24,13 +24,14 @@ This guide requires 32 Nvidia H200 or B200 GPUs and InfiniBand or RoCE RDMA netw
 * Have the [proper client tools installed on your local system](../prereq/client-setup/README.md) to use this guide.
 * Ensure your cluster infrastructure is sufficient to [deploy high scale inference](../prereq/infrastructure/README.md)
   * You must have high speed inter-accelerator networking
-  * The pods leveraging inter-node EP must be deployed within the same networking domain
+  * The pods leveraging inter-node EP must be deployed in a cluster environment with full mesh network connectivity.
+    * **_NOTE:_** The DeepEP backend used in WideEP requires All-to-All RDMA connectivity. Every NIC on a host must be able to communicate with every NIC on all other hosts. Networks restricted to communicating only between matching NIC IDs (rail-only connectivity) will fail.
   * You have deployed the [LeaderWorkerSet optional controller](../prereq/infrastructure/README.md#optional-install-leaderworkerset-for-multi-host-inference)
 * Configure and deploy your [Gateway control plane](../prereq/gateway-provider/README.md).
 * Have the [Monitoring stack](../../docs/monitoring/README.md) installed on your system.
 * Create a namespace for installation.
 
-  ```
+  ```bash
   export NAMESPACE=llm-d-wide-ep # or any other namespace (shorter names recommended)
   kubectl create namespace ${NAMESPACE}
   ```
@@ -88,8 +89,8 @@ helm install llm-d-infpool \
   -n ${NAMESPACE} \
   -f ./manifests/inferencepool.values.yaml \
   --set "provider.name=gke" \
-  --set "inferenceExtension.monitoring.gke.enable=true" \
-  oci://us-central1-docker.pkg.dev/k8s-staging-images/gateway-api-inference-extension/charts/inferencepool \
+  --set "inferenceExtension.monitoring.gke.enabled=true" \
+  oci://registry.k8s.io/gateway-api-inference-extension/charts/inferencepool \
   --version v1.2.0
 ```
 
@@ -101,8 +102,8 @@ helm install llm-d-infpool \
   -n ${NAMESPACE} \
   -f ./manifests/inferencepool.values.yaml \
   --set "provider.name=istio" \
-  --set "inferenceExtension.monitoring.prometheus.enable=true" \
-  oci://us-central1-docker.pkg.dev/k8s-staging-images/gateway-api-inference-extension/charts/inferencepool \
+  --set "inferenceExtension.monitoring.prometheus.enabled=true" \
+  oci://registry.k8s.io/gateway-api-inference-extension/charts/inferencepool \
   --version v1.2.0
 ```
 
@@ -113,7 +114,7 @@ helm install llm-d-infpool \
 helm install llm-d-infpool \
   -n ${NAMESPACE} \
   -f ./manifests/inferencepool.values.yaml \
-  oci://us-central1-docker.pkg.dev/k8s-staging-images/gateway-api-inference-extension/charts/inferencepool \
+  oci://registry.k8s.io/gateway-api-inference-extension/charts/inferencepool \
   --version v1.2.0
 ```
 
@@ -196,7 +197,7 @@ To remove the deployment:
 # From examples/wide-ep-lws
 helm uninstall llm-d-infpool -n ${NAMESPACE}
 kubectl delete -k ./manifests/modelserver/<gke|coreweave> -n ${NAMESPACE}
-kubectl delete -k ./manifests/gateway/<gke-l7-regional-external-managed|istio|kgateway|kgateway-openshift> -n ${NAMESPACE}
+kubectl delete -k ../recipes/gateway/<gke-l7-regional-external-managed|istio|kgateway|kgateway-openshift> -n ${NAMESPACE}
 ```
 
 ## Customization
