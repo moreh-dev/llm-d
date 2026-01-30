@@ -20,19 +20,20 @@ cd /tmp
 . "${VIRTUAL_ENV}/bin/activate"
 
 if [ "${USE_SCCACHE}" = "true" ]; then
+    # Keep CC/CXX pointing at real compilers so torch doesn't think
+    # "sccache" itself is the compiler (logging/ABI warning issue)
     export CC="gcc" CXX="g++" NVCC="nvcc"
-    # Create wrapper dir
+
+    # Wrap gcc/g++ with sccache via PATH so caching still works
     WRAPDIR=/tmp/sccache-wrappers
     mkdir -p "$WRAPDIR"
 
-    # Make "gcc/g++" invoke sccache
     ln -sf "$(command -v sccache)" "$WRAPDIR/gcc"
     ln -sf "$(command -v sccache)" "$WRAPDIR/g++"
 
-    # Put wrappers first
+    # Ensure wrappers are picked up before system compilers
     export PATH="$WRAPDIR:$PATH"
 fi
-
 git clone "${INFINISTORE_REPO}" infinistore && cd infinistore
 git checkout -q "${INFINISTORE_VERSION}"
 uv build --wheel --no-build-isolation --out-dir /wheels
@@ -42,8 +43,10 @@ rm -rf infinistore
 git clone "${LMCACHE_REPO}" lmcache && cd lmcache
 git checkout -q "${LMCACHE_VERSION}"
 
-unset NINJA_STATUS # debug
-unset TORCH_LOGS  # debug
+# Prevent torch from whining when using sccache and misdetecting the compiler
+# (logging-only issue, does not affect the actual build)
+unset NINJA_STATUS
+unset TORCH_LOGS
 uv build -v --wheel --no-build-isolation --out-dir /wheels
 cd ..
 rm -rf lmcache
