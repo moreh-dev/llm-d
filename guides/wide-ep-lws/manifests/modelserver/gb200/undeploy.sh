@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-# GB200 cleanup script
+# GB200 P/D cleanup script
 #
 # Required environment variables:
 # - NAMESPACE: Kubernetes namespace (default: vllm)
@@ -9,7 +9,7 @@ set -e
 NAMESPACE="${NAMESPACE:-vllm}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-echo "Removing GB200 model server from namespace: $NAMESPACE"
+echo "Removing GB200 P/D model server from namespace: $NAMESPACE"
 
 kubectl delete -k "$SCRIPT_DIR" -n "$NAMESPACE" --ignore-not-found
 
