@@ -84,7 +84,7 @@ RUN export UV_INSTALL_DIR=/usr/local/bin && \
     uv pip install --no-cache -U wheel meson-python ninja pybind11 build
 
 ENV PATH="${VIRTUAL_ENV}/bin:${PATH}" \
-    LIBRARY_PATH="/usr/local/cuda/lib64:/usr/local/lib:/usr/local/lib64" \
+    LIBRARY_PATH="/usr/local/cuda/lib64/stubs:/usr/local/cuda/lib64:/usr/local/lib:/usr/local/lib64" \
     CPATH="/usr/include:/usr/local/include:/usr/local/cuda/include" \
     PKG_CONFIG_PATH="/usr/lib/pkgconfig:/usr/local/lib/pkgconfig:/usr/local/lib64/pkgconfig"
 
