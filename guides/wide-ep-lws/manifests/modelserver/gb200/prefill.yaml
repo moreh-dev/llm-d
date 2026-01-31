@@ -23,6 +23,9 @@ spec:
             emptyDir:
               medium: Memory
               sizeLimit: 2Gi
+          - name: lustre
+            persistentVolumeClaim:
+              claimName: lustre-pvc-vllm
         resourceClaims:
           - name: compute-domain-channel
             resourceClaimTemplateName: llm-d-dev-claim
@@ -52,7 +55,6 @@ spec:
                 exec vllm serve \
                   deepseek-ai/DeepSeek-V3 \
                   --port 8000 \
-                  --load-format dummy \
                   --disable-uvicorn-access-log \
                   --enable-expert-parallel \
                   --data-parallel-hybrid-lb \
@@ -64,6 +66,16 @@ spec:
                   --trust-remote-code \
                   --kv_transfer_config '{"kv_connector":"NixlConnector","kv_role":"kv_both"}'
             env:
+              # HuggingFace token and cache location
+              - name: HF_TOKEN
+                valueFrom:
+                  secretKeyRef:
+                    name: hf-secret
+                    key: HF_TOKEN
+                    optional: true
+              - name: HF_HOME
+                value: /mnt/lustre/hf_cache
+
               # Data parallelism - GPUs per pod
               - name: DP_SIZE_LOCAL
                 value: "4"
@@ -121,15 +133,17 @@ spec:
               claims:
                 - name: compute-domain-channel
               limits:
-                ephemeral-storage: 64Gi
+                ephemeral-storage: 128Gi
                 memory: 512Gi
                 nvidia.com/gpu: "4"
               requests:
                 cpu: 32
-                ephemeral-storage: 64Gi
+                ephemeral-storage: 128Gi
                 memory: 512Gi
                 nvidia.com/gpu: "4"
             volumeMounts:
               - mountPath: /dev/shm
                 name: dshm
+              - mountPath: /mnt/lustre
+                name: lustre
             workingDir: /code

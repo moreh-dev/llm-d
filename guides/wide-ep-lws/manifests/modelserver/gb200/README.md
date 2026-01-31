@@ -20,10 +20,12 @@ Simplified deployment for GB200 NVL72 racks. Designed for debugging and initial 
      https://github.com/kubernetes-sigs/lws/releases/download/v0.6.2/manifests.yaml
    ```
 
-3. **Image pull secret**: The deployment uses Elvir's private image registry.
+3. **HuggingFace token**: Required to download the DeepSeek-V3 model.
    Ensure the secret exists:
    ```bash
-   kubectl get secret rh-ee-ecrncevi-ecrncevi-vllm-pull-pull-secret -n vllm
+   kubectl get secret hf-secret -n vllm
+   # Create if needed:
+   kubectl create secret generic hf-secret -n vllm --from-literal=HF_TOKEN=<your-token>
    ```
 
 4. **DRA ResourceClaimTemplate**: GB200 uses Dynamic Resource Allocation.
