@@ -10,6 +10,11 @@ modelArtifacts:
   uri: "pvc+hf://model-pvc/meta-llama/Llama-3.1-8B-Instruct"
   size: 50Gi
   authSecretName: "llm-d-hf-token"
+  labels:
+    llm-d.ai/inference-serving: "true"
+    llm-d.ai/guide: "inference-scheduling"
+    llm-d.ai/hardware-vairant: "hpu"
+    llm-d.ai/model: "Llama-3.1-8B-Instruct"
 
 dra:
   enabled: true

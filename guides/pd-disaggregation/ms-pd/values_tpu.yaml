@@ -9,6 +9,11 @@ modelArtifacts:
   size: 200Gi
   authSecretName: "llm-d-hf-token"
   name: "meta-llama/Llama-3.3-70B-Instruct"
+  labels:
+    llm-d.ai/inference-serving: "true"
+    llm-d.ai/guide: "pd-disaggregation"
+    llm-d.ai/hardware-vairant: "tpu"
+    llm-d.ai/model: "Llama-3.3-70B-Instruct"
 
 routing:
   servicePort: 8000

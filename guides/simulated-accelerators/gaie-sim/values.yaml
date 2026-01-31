@@ -36,4 +36,8 @@ inferencePool:
   modelServerType: vllm
   modelServers:
     matchLabels:
-      llm-d.ai/inferenceServing: "true"
+      llm-d.ai/inference-serving: "true"
+      llm-d.ai/guide: "simulated-accelerators"
+      # optional additional guide-specific labels - no overlays so we can be specific here
+      llm-d.ai/accelerator-variant: "cpu"
+      llm-d.ai/model: "random"

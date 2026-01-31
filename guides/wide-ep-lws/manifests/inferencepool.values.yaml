@@ -52,7 +52,7 @@ inferenceExtension:
 inferencePool:
   modelServers:
     matchLabels:
-      llm-d.ai/inferenceServing: "true"
+      llm-d.ai/inference-serving: "true"
       llm-d.ai/model: DeepSeek-R1-0528
 
 provider:

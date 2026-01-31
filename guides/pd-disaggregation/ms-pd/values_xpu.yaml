@@ -13,6 +13,11 @@ modelArtifacts:
   size: 10Gi  # Smaller model size for Intel XPU
   authSecretName: "llm-d-hf-token"
   name: "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"
+  labels:
+    llm-d.ai/inference-serving: "true"
+    llm-d.ai/guide: "pd-disaggregation"
+    llm-d.ai/hardware-vairant: "xpu"
+    llm-d.ai/model: "DeepSeek-R1-Distill-Qwen-1.5B"
 
 routing:
   servicePort: 8000

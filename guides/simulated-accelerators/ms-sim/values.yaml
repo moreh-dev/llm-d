@@ -4,6 +4,11 @@ modelArtifacts:
   uri: "hf://random"
   name: random
   size: 5Mi
+  labels:
+    llm-d.ai/inference-serving: "true"
+    llm-d.ai/guide: "simulated-accelerators"
+    llm-d.ai/accelerator-variant: "cpu"
+    llm-d.ai/model: "random"
 
 routing:
   servicePort: 8000
