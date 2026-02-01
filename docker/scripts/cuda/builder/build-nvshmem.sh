@@ -1,5 +1,5 @@
 #!/bin/bash
-set -Eeux
+set -Eex
 
 # builds and installs NVSHMEM from source with coreweave patch
 #

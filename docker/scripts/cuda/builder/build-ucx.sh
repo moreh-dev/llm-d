@@ -1,5 +1,5 @@
 #!/bin/bash
-set -Eeu
+set -Ee
 
 # purpose: builds and installs UCX from source
 # --------------------------------------------

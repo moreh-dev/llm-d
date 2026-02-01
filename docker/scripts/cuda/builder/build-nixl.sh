@@ -1,5 +1,5 @@
 #!/bin/bash
-set -Eeu
+set -Eex
 
 # purpose: builds NIXL from source, gated by `BUILD_NIXL_FROM_SOURCE`
 #
