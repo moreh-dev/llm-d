@@ -10,6 +10,7 @@ modelArtifacts:
     llm-d.ai/inference-serving: "true"
     llm-d.ai/guide: "inference-scheduling"
     llm-d.ai/hardware-vairant: "xpu"
+    llm-d.ai/accelerator-vendor: "intel"
     llm-d.ai/model: "Qwen3-0.6B"
 
 accelerator:  # controlls specialized hardware Type

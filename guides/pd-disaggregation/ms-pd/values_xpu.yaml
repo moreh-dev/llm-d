@@ -17,6 +17,7 @@ modelArtifacts:
     llm-d.ai/inference-serving: "true"
     llm-d.ai/guide: "pd-disaggregation"
     llm-d.ai/hardware-vairant: "xpu"
+    llm-d.ai/hardware-vendor: "intel"
     llm-d.ai/model: "DeepSeek-R1-Distill-Qwen-1.5B"
 
 routing:

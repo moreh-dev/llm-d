@@ -12,6 +12,7 @@ modelArtifacts:
     llm-d.ai/inference-serving: "true"
     llm-d.ai/guide: "precise-prefix-cache-aware"
     llm-d.ai/accelerator-variant: "xpu"
+    llm-d.ai/accelerator-vendor: "intel"
     llm-d.ai/model: "Qwen3-0.6B"
 
 dra:
