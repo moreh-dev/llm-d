@@ -1,5 +1,5 @@
 #!/bin/bash
-set -Eeu
+set -euox pipefail
 
 # installs base packages, EPEL/universe repos, and CUDA repository
 #
@@ -37,3 +37,6 @@ else
     echo "ERROR: Unsupported TARGETOS='$TARGETOS'. Must be 'ubuntu' or 'rhel'." >&2
     exit 1
 fi
+
+cleanup_packages rhel
+ensure_unregistered

@@ -74,6 +74,3 @@ for efalib in libefa libibverbs librdmacm; do
         cp -a /lib64/${efalib}.so* /tmp/efa_libs/ || true
     fi
 done
-
-cleanup_packages rhel
-ensure_unregistered
