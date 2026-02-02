@@ -151,9 +151,7 @@ RUN --mount=type=secret,id=subman_org \
 COPY docker/scripts/cuda/common/package-utils.sh /tmp/package-utils.sh
 COPY docker/packages /tmp/packages
 COPY docker/scripts/cuda/builder/install-base-packages.sh /tmp/install-base-packages.sh
-RUN --mount=type=secret,id=subman_org \
-    --mount=type=secret,id=subman_activation_key \
-    TARGETOS=${TARGETOS} /tmp/install-base-packages.sh && \
+RUN TARGETOS=${TARGETOS} /tmp/install-base-packages.sh && \
     rm -f /tmp/install-base-packages.sh /tmp/package-utils.sh && \
     rm -rf /tmp/packages
 
