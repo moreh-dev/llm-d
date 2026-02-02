@@ -22,16 +22,6 @@ fi
 
 DOWNLOAD_ARCH=$(get_download_arch)
 
-# install jq first (required to parse package mappings)
-if [ "$TARGETOS" = "ubuntu" ]; then
-    apt-get update -qq
-    apt-get install -y jq
-elif [ "$TARGETOS" = "rhel" ]; then
-    dnf -q update -y
-    dnf -q install -y jq
-    ensure_registered
-fi
-
 # main installation logic
 if [ "$TARGETOS" = "ubuntu" ]; then
     setup_ubuntu_repos

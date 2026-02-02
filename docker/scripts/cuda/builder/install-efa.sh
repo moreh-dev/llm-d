@@ -38,6 +38,17 @@ if [ "$TARGETOS" = "ubuntu" ]; then
     apt update -y
 fi
 
+# install jq first (required to parse package mappings)
+if [ "$TARGETOS" = "ubuntu" ]; then
+    apt-get update -qq
+    apt-get install -y jq
+elif [ "$TARGETOS" = "rhel" ]; then
+    dnf -q update -y
+    dnf -q install -y jq
+    ensure_registered
+fi
+
+
 EFA_INSTALLER_URL="https://efa-installer.amazonaws.com"
 EFA_TARBALL="aws-efa-installer-${EFA_INSTALLER_VERSION}.tar.gz"
 EFA_WORKDIR="/tmp/efa"
