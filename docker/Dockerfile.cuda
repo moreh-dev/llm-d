@@ -110,36 +110,6 @@ ENV LANG="C.UTF-8" \
     VIRTUAL_ENV="/opt/vllm" \
     CUDA_HOME="/usr/local/cuda"
 
-# Install base packages and EPEL in single layer
-COPY docker/scripts/cuda/common/package-utils.sh /tmp/package-utils.sh
-COPY docker/packages /tmp/packages
-COPY docker/scripts/cuda/builder/install-base-packages.sh /tmp/install-base-packages.sh
-RUN --mount=type=secret,id=subman_org \
-    --mount=type=secret,id=subman_activation_key \
-    TARGETOS=${TARGETOS} /tmp/install-base-packages.sh && \
-    rm -f /tmp/install-base-packages.sh /tmp/package-utils.sh && \
-    rm -rf /tmp/packages
-
-# Install cmake from script for consistency between ubuntu22.04 and rhel9
-COPY docker/scripts/cuda/builder/install-cmake.sh /tmp/install-cmake.sh
-RUN --mount=type=cache,target=/var/cache/git \
-    /tmp/install-cmake.sh && \
-    rm -f /tmp/install-cmake.sh
-
-# Install sccache (after base packages which include curl and openssl-devel)
-COPY docker/scripts/common/setup-sccache.sh /usr/local/bin/setup-sccache
-COPY docker/scripts/cuda/builder/install-sccache.sh /tmp/install-sccache.sh
-RUN --mount=type=secret,id=aws_access_key_id \
-    --mount=type=secret,id=aws_secret_access_key \
-    TARGETOS=${TARGETOS} /tmp/install-sccache.sh && \
-    rm -f /tmp/install-sccache.sh
-
-# Install uv and setup Python virtual environment
-RUN export UV_INSTALL_DIR=/usr/local/bin && \
-    curl -LsSf https://astral.sh/uv/install.sh | sh && \
-    uv venv /opt/vllm --python ${PYTHON_VERSION} && \
-    uv pip install --no-cache -U wheel meson-python ninja pybind11 build
-
 ENV NVSHMEM_DIR="/opt/nvshmem-${NVSHMEM_VERSION}" \
     EFA_PREFIX="/opt/amazon/efa" \
     UCX_PREFIX="/opt/ucx" \
@@ -176,6 +146,36 @@ RUN --mount=type=secret,id=subman_org \
     EFA_INSTALLER_VERSION=${EFA_INSTALLER_VERSION} \
     /tmp/install-efa.sh && \
     rm -f /tmp/install-efa.sh /tmp/package-utils.sh
+
+# Install base packages and EPEL in single layer ontop of EFA RDMA core
+COPY docker/scripts/cuda/common/package-utils.sh /tmp/package-utils.sh
+COPY docker/packages /tmp/packages
+COPY docker/scripts/cuda/builder/install-base-packages.sh /tmp/install-base-packages.sh
+RUN --mount=type=secret,id=subman_org \
+    --mount=type=secret,id=subman_activation_key \
+    TARGETOS=${TARGETOS} /tmp/install-base-packages.sh && \
+    rm -f /tmp/install-base-packages.sh /tmp/package-utils.sh && \
+    rm -rf /tmp/packages
+
+# Install cmake from script for consistency between ubuntu22.04 and rhel9
+COPY docker/scripts/cuda/builder/install-cmake.sh /tmp/install-cmake.sh
+RUN --mount=type=cache,target=/var/cache/git \
+    /tmp/install-cmake.sh && \
+    rm -f /tmp/install-cmake.sh
+
+# Install sccache (after base packages which include curl and openssl-devel)
+COPY docker/scripts/common/setup-sccache.sh /usr/local/bin/setup-sccache
+COPY docker/scripts/cuda/builder/install-sccache.sh /tmp/install-sccache.sh
+RUN --mount=type=secret,id=aws_access_key_id \
+    --mount=type=secret,id=aws_secret_access_key \
+    TARGETOS=${TARGETOS} /tmp/install-sccache.sh && \
+    rm -f /tmp/install-sccache.sh
+
+# Install uv and setup Python virtual environment
+RUN export UV_INSTALL_DIR=/usr/local/bin && \
+    curl -LsSf https://astral.sh/uv/install.sh | sh && \
+    uv venv /opt/vllm --python ${PYTHON_VERSION} && \
+    uv pip install --no-cache -U wheel meson-python ninja pybind11 build
 
 # Build and install gdrcopy
 ARG GDRCOPY_REPO
