@@ -64,7 +64,12 @@ spec:
                   --data-parallel-rpc-port 5555 \
                   --data-parallel-start-rank $START_RANK \
                   --trust-remote-code \
-                  --kv_transfer_config '{"kv_connector":"NixlConnector","kv_role":"kv_both"}'
+                  --kv_transfer_config '{"kv_connector":"NixlConnector",
+                                          "kv_role":"kv_both",
+                                          "kv_load_failure_policy":"fail"}' \
+                  --async-scheduling \
+                  --all2all-backend "deepep_high_throughput" \
+                  --gpu-memory-utilization 0.75
             env:
               # HuggingFace token and cache location
               - name: HF_TOKEN
@@ -80,9 +85,6 @@ spec:
               - name: DP_SIZE_LOCAL
                 value: "4"
 
-              # Prefill uses high_throughput backend (optimized for large batches)
-              - name: VLLM_ALL2ALL_BACKEND
-                value: deepep_high_throughput
               - name: VLLM_DEEPEP_HIGH_THROUGHPUT_FORCE_INTRA_NODE
                 value: "1"
 
