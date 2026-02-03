@@ -4,7 +4,7 @@ metadata:
   name: wide-ep-gb200-decode
   labels:
     llm-d.ai/inferenceServing: "true"
-    llm-d.ai/model: DeepSeek-V3
+    llm-d.ai/model: DeepSeek-R1-NVFP4
     llm-d.ai/role: decode
 spec:
   replicas: 1
@@ -14,7 +14,7 @@ spec:
       metadata:
         labels:
           llm-d.ai/inferenceServing: "true"
-          llm-d.ai/model: DeepSeek-V3
+          llm-d.ai/model: DeepSeek-R1-NVFP4
           llm-d.ai/role: decode
       spec:
         serviceAccountName: wide-ep-gb200
@@ -49,7 +49,7 @@ spec:
               runAsNonRoot: true
         containers:
           - name: vllm
-            image: quay.io/tms/llm-d-cuda-dev:v0.5.0-arm64
+            image: quay.io/tms/llm-d-cuda-dev:nvfp4_deepep_ht-arm64
             securityContext:
               capabilities:
                 add:
@@ -71,7 +71,7 @@ spec:
                 START_RANK=$(( ${LWS_WORKER_INDEX:-0} * DP_SIZE_LOCAL ))
                 source /opt/vllm/bin/activate
                 exec vllm serve \
-                  deepseek-ai/DeepSeek-V3 \
+                  nvidia/DeepSeek-R1-NVFP4 \
                   --port 8200 \
                   --disable-uvicorn-access-log \
                   --enable-expert-parallel \
@@ -104,6 +104,12 @@ spec:
                     optional: true
               - name: HF_HOME
                 value: /mnt/lustre/hf_cache
+
+              # Compile caches - persist across restarts for faster startup
+              - name: VLLM_CACHE_ROOT
+                value: /mnt/lustre/tms/vllm_cache
+              - name: FLASHINFER_CACHE_DIR
+                value: /mnt/lustre/tms/flashinfer_cache
 
               # Data parallelism - GPUs per pod
               - name: DP_SIZE_LOCAL
