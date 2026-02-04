@@ -3,15 +3,22 @@
 
 multinode: false
 
+# Configure accelerator type for Intel XPU via DRA
+accelerator:
+  type: intel-i915
+  dra: true
+
 modelArtifacts:
   name: Qwen/Qwen3-0.6B
   uri: "hf://Qwen/Qwen3-0.6B"
   size: 10Gi
   authSecretName: "llm-d-hf-token"
-
-dra:
-  enabled: true
-  type: intel
+  labels:
+    llm-d.ai/inference-serving: "true"
+    llm-d.ai/guide: "precise-prefix-cache-aware"
+    llm-d.ai/hardware-variant: "xpu"
+    llm-d.ai/hardware-vendor: "intel"
+    llm-d.ai/model: "Qwen3-0.6B"
 
 routing:
   proxy:
@@ -29,7 +36,7 @@ decode:
   containers:
     - name: "vllm"
       # Use Intel latest published xpu image
-      image: ghcr.io/llm-d/llm-d-xpu-dev:pr-592
+      image: ghcr.io/llm-d/llm-d-xpu:v0.5.0
       modelCommand: custom
       command:
         - /bin/sh

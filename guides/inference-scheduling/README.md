@@ -8,11 +8,13 @@ This profile defaults to the approximate prefix cache aware scorer, which only o
 
 ## Hardware Requirements
 
-This example out of the box uses 16 GPUs (8 replicas x 2 GPUs each) of any supported kind, though fewer can be used so long as `values.yaml` is also updated accordingly:
+This example out of the box uses 16 GPUs (8 replicas x 2 GPUs each) of any supported kind:
 
 - **NVIDIA GPUs**: Any NVIDIA GPU (support determined by the inferencing image used)
 - **Intel XPU/GPUs**: Intel Data Center GPU Max 1550 or compatible Intel XPU device
 - **TPUs**: Google Cloud TPUs (when using GKE TPU configuration)
+
+**Using fewer accelerators**: Fewer accelerators can be used by modifying the `values.yaml` corresponding to your deployment. For example, to use only 2 GPUs with the default NVIDIA GPU deployment, update `replicas: 2` in [ms-inference-scheduling/values.yaml](./ms-inference-scheduling/values.yaml#L17-L22).
 
 **Alternative CPU Deployment**: For CPU-only deployment (no GPUs required), see the [Hardware Backends](#hardware-backends) section for CPU-specific deployment instructions. CPU deployment requires Intel/AMD CPUs with 64 cores and 64GB RAM per replica.
 
@@ -118,6 +120,22 @@ helmfile apply -e gke_tpu  -n ${NAMESPACE} # targets GKE externally managed as g
 helmfile apply -e cpu  -n ${NAMESPACE} # targets istio as gateway provider with CPU hardware
 ```
 
+##### Intel XPU Configuration
+
+For Intel XPU deployments, the `values_xpu.yaml` uses Dynamic Resource Allocation (DRA). By default it targets Intel Data Center GPU Max 1550 (i915 driver). For Intel BMG GPUs (Battlemage G21), update the accelerator type in `ms-inference-scheduling/values_xpu.yaml`:
+
+```yaml
+# For Intel Data Center GPU Max 1550 (default):
+accelerator:
+  type: intel-i915
+  dra: true
+
+# For Intel BMG GPU (Battlemage G21):
+accelerator:
+  type: intel-xe
+  dra: true
+```
+
 ##### CPU Inferencing
 
 This case expects using 4th Gen Intel Xeon processors (Sapphire Rapids) or later.
@@ -158,7 +176,7 @@ helm list -n ${NAMESPACE}
 NAME                        NAMESPACE                   REVISION  UPDATED                                 STATUS      CHART                       APP VERSION
 gaie-inference-scheduling   llm-d-inference-scheduler   1         2026-01-26 15:11:26.506854 +0200 IST    deployed    inferencepool-v1.3.0        v1.3.0
 infra-inference-scheduling  llm-d-inference-scheduler   1         2026-01-26 15:11:21.008163 +0200 IST    deployed    llm-d-infra-v1.3.6          v0.3.0
-ms-inference-scheduling     llm-d-inference-scheduler   1         2026-01-26 15:11:39.385111 +0200 IST    deployed    llm-d-modelservice-v0.3.17  v0.3.0
+ms-inference-scheduling     llm-d-inference-scheduler   1         2026-01-26 15:11:39.385111 +0200 IST    deployed    llm-d-modelservice-v0.4.5   v0.4.0
 ```
 
 - Out of the box with this example you should have the following resources:
@@ -202,8 +220,8 @@ replicaset.apps/ms-inference-scheduling-llm-d-modelservice-decode-866b7c8768    
 ```bash
 helm list -n ${NAMESPACE}
 NAME                        NAMESPACE                 REVISION  UPDATED                               STATUS    CHART                       APP VERSION
-gaie-inference-scheduling   llm-d-inference-scheduler 1         2025-08-24 11:24:53.231918 -0700 PDT  deployed  inferencepool-v1.2.0        v1.2.0
-ms-inference-scheduling     llm-d-inference-scheduler 1         2025-08-24 11:24:58.360173 -0700 PDT  deployed  llm-d-modelservice-v0.3.17  v0.3.0
+gaie-inference-scheduling   llm-d-inference-scheduler 1         2025-08-24 11:24:53.231918 -0700 PDT  deployed  inferencepool-v1.3.0        v1.3.0
+ms-inference-scheduling     llm-d-inference-scheduler 1         2025-08-24 11:24:58.360173 -0700 PDT  deployed  llm-d-modelservice-v0.4.5   v0.4.0
 ```
 
 - Out of the box with this example you should have the following resources:

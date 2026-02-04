@@ -25,11 +25,11 @@ This guide provides recipes to offload prefix cache to CPU RAM via the vLLM nati
 cd guides/tiered-prefix-cache/cpu
 ```
 
-### 1. Deploy Gateway and HTTPRoute
+### Deploy Gateway and HTTPRoute
 
 Deploy the Gateway and HTTPRoute using the [gateway recipe](../../recipes/gateway/README.md).
 
-### 2. Deploy vLLM Model Server
+### Deploy vLLM Model Server
 
 <!-- TABS:START -->
 
@@ -53,7 +53,7 @@ kubectl apply -k ./manifests/vllm/lmcache-connector -n ${NAMESPACE}
 
 <!-- TABS:END -->
 
-### 3. Deploy InferencePool
+### Deploy InferencePool
 
 To deploy the `InferencePool`, select your provider below.
 
@@ -70,9 +70,9 @@ helm install llm-d-infpool \
     -n ${NAMESPACE} \
     -f ./manifests/inferencepool/values.yaml \
     --set "provider.name=gke" \
-    --set "inferenceExtension.monitoring.gke.enabled=true" \
+    --set "inferenceExtension.monitoring.prometheus.enabled=true" \
     oci://registry.k8s.io/gateway-api-inference-extension/charts/inferencepool \
-    --version v1.2.0
+    --version v1.3.0
 ```
 
 <!-- TAB:Istio -->
@@ -88,7 +88,7 @@ helm install llm-d-infpool \
     --set "provider.name=istio" \
     --set "inferenceExtension.monitoring.prometheus.enabled=true" \
     oci://registry.k8s.io/gateway-api-inference-extension/charts/inferencepool \
-    --version v1.2.0
+    --version v1.3.0
 ```
 
 <!-- TAB:Kgateway -->
@@ -103,7 +103,7 @@ helm install llm-d-infpool \
     -f ./manifests/inferencepool/values.yaml \
     --set "provider.name=kgateway" \
     oci://registry.k8s.io/gateway-api-inference-extension/charts/inferencepool \
-    --version v1.2.0
+    --version v1.3.0
 ```
 
 <!-- TABS:END -->
