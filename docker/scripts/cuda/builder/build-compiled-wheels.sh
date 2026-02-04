@@ -1,5 +1,5 @@
 #!/bin/bash
-set -Eeu
+set -Eeux
 
 # builds compiled extension wheels (FlashInfer, DeepEP, DeepGEMM)
 #
@@ -32,7 +32,7 @@ uv pip install build cuda-python numpy setuptools-scm ninja cmake requests filel
 export LIBRARY_PATH="${CUDA_HOME}/lib64/stubs:${LIBRARY_PATH:-}"
 # TODO: Consider using TORCH_CUDA_ARCH_LIST from Dockerfile ENV instead of hardcoding
 # overwrite the TORCH_CUDA_ARCH_LIST for MoE kernels
-export TORCH_CUDA_ARCH_LIST="9.0a;10.0+PTX" 
+export TORCH_CUDA_ARCH_LIST="9.0a;10.0+PTX"
 
 # build FlashInfer wheel
 uv pip uninstall flashinfer-python || true
@@ -46,6 +46,7 @@ rm -rf flashinfer
 # build DeepEP wheel
 git clone "${DEEPEP_REPO}" deepep
 cd deepep
+git fetch origin "${DEEPEP_VERSION}" # Workaround for claytons floating commit
 git checkout -q "${DEEPEP_VERSION}"
 uv build --wheel --no-build-isolation --out-dir /wheels
 cd ..

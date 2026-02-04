@@ -60,6 +60,9 @@ IMG := $(IMAGE_BASE):$(VERSION)-$(ARCH)
 CONTAINER_TOOL := $(shell (command -v docker >/dev/null 2>&1 && echo docker) || (command -v podman >/dev/null 2>&1 && echo podman) || echo "")
 BUILDER := $(shell command -v buildah >/dev/null 2>&1 && echo buildah || echo $(CONTAINER_TOOL))
 
+# SUPPRESS_PYTHON_OUTPUT: Set to "1" or "true" to suppress verbose pip output during build (default: verbose enabled)
+SUPPRESS_PYTHON_OUTPUT ?=
+
 .PHONY: help
 help: ## Print help
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
@@ -136,6 +139,7 @@ image-build: check-container-tool ## Build Docker image using $(CONTAINER_TOOL)
 		--build-arg USE_SCCACHE=$(USE_SCCACHE) \
 		--build-arg MAX_JOBS=$(MAX_JOBS) \
 		--build-arg TORCH_CUDA_ARCH_LIST="$(TORCH_CUDA_ARCH_LIST)" \
+		$(if $(SUPPRESS_PYTHON_OUTPUT),--build-arg SUPPRESS_PYTHON_OUTPUT=$(SUPPRESS_PYTHON_OUTPUT)) \
 		-t $(IMG) -f $(DOCKERFILE_DIR)/$(DOCKERFILE) .
 
 .PHONY: image-push
