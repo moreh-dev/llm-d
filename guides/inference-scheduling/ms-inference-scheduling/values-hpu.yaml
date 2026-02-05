@@ -21,13 +21,14 @@ modelArtifacts:
   labels:
     llm-d.ai/inference-serving: "true"
     llm-d.ai/guide: "inference-scheduling"
-    llm-d.ai/hardware-vairant: "hpu"
+    llm-d.ai/hardware-variant: "hpu"
     llm-d.ai/accelerator-vendor: "intel"
     llm-d.ai/model: "Llama-3.1-8B-Instruct"
 
-dra:
-  enabled: true
-  type: "intel-gaudi"
+# Configure accelerator type for Intel Gaudi via DRA
+accelerator:
+  type: intel-gaudi
+  dra: true
 
 routing:
   proxy:
