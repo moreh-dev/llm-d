@@ -142,8 +142,8 @@ WORKDIR /workspace
 # Define commit SHAs as build args to avoid layer invalidation
 ARG LMCACHE_REPO=https://github.com/LMCache/LMCache.git
 ARG LMCACHE_COMMIT_SHA
-ARG VLLM_REPO="https://github.com/vllm-project/vllm.git"
-ARG VLLM_COMMIT_SHA="72506c98349d6bcd32b4e33eec7b5513453c1502"
+ARG VLLM_REPO="https://github.com/jtechapps/vllm-1.git"
+ARG VLLM_COMMIT_SHA="279e534f57bf77e4a35ecb2908a6adf7c382e00f"
 
 # Build LMCache wheel (skip on ARM64 - infinistore dependency has no ARM wheels)
 # hadolint ignore=DL3003,SC1091
