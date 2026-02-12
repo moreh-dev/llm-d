@@ -71,6 +71,11 @@ CMAKE_EXTRA_FLAGS=()
 
 if [ "${BUILD_DEBUG}" = "true" ]; then
     echo "=== Building NVSHMEM with debug symbols and logging enabled ==="
+
+    CMAKE_EXTRA_FLAGS+=(
+        -DCMAKE_COMPILE_WARNING_AS_ERROR=OFF
+    )
+
     DEBUG_FLAGS=(
         -DCMAKE_BUILD_TYPE=RelWithDebInfo
         -DNVSHMEM_DEBUG=ON
@@ -80,6 +85,8 @@ if [ "${BUILD_DEBUG}" = "true" ]; then
     # Host compiler: keep warnings, but don't fail the build on maybe-uninitialized
     # Use *no-error* rather than *no-warning* so you still see it in logs.
     CMAKE_EXTRA_FLAGS+=(
+        -DCMAKE_C_FLAGS_DEBUG="-Wno-error=maybe-uninitialized"
+        -DCMAKE_CXX_FLAGS_DEBUG="-Wno-error=maybe-uninitialized"
         -DCMAKE_C_FLAGS_RELWITHDEBINFO="-Wno-error=maybe-uninitialized"
         -DCMAKE_CXX_FLAGS_RELWITHDEBINFO="-Wno-error=maybe-uninitialized"
     )
