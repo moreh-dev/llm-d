@@ -46,7 +46,6 @@ HOST="${GATEWAY_HOST:-$(kubectl get gateway -n "$NAMESPACE" \
           -o jsonpath='{.items[0].status.addresses[0].value}' 2>/dev/null || true)}"
 if [[ -z "$HOST" ]]; then
   echo "Error: could not discover a Gateway address in namespace '$NAMESPACE'." >&2
-  print_diagnostics "$NAMESPACE"
   exit 1
 fi
 PORT=80
@@ -181,8 +180,6 @@ CMD
 
   if $failed; then
     echo "Iteration $i encountered errors; exiting." >&2
-    echo "Printing diagnostics before exit..."
-    print_diagnostics "$NAMESPACE"
     exit 1
   fi
 done
