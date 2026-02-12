@@ -11,12 +11,12 @@ on:
   workflow_dispatch:
     inputs:
       pr_or_branch:
-        description: 'Pull-request number or branch name to test'
+        description: 'PR number (e.g. 123 or pr-123) or branch name (e.g. main, feature/xyz) to test'
         required: true
         default: 'main'
         type: string
       custom_image_tag:
-        description: 'Custom CPU image tag to use (optional)'
+        description: 'Tag only (e.g. pr-123, auto-expanded to ghcr.io/<org>/<repo>-cpu-dev:pr-123) or full image address. Leave empty to use default from values file'
         required: false
         default: ''
         type: string
@@ -61,7 +61,10 @@ jobs:
         shell: bash
         run: |
           echo "PR_OR_BRANCH=${PR_OR_BRANCH:-main}" >> "$GITHUB_ENV"
-          if [[ "$PR_OR_BRANCH" =~ ^[0-9]+$ ]]; then
+          # Strip optional 'pr-' prefix so both '704' and 'pr-704' work
+          CLEAN="${PR_OR_BRANCH#pr-}"
+          if [[ "$CLEAN" =~ ^[0-9]+$ ]]; then
+            echo "PR_OR_BRANCH=$CLEAN" >> "$GITHUB_ENV"
             echo "is_pr=true" >> "$GITHUB_OUTPUT"
           elif [[ "${{ github.event_name }}" = "pull_request" ]]; then
             echo "PR_OR_BRANCH=${{ github.event.pull_request.number }}" >> $GITHUB_ENV
@@ -111,9 +114,16 @@ jobs:
         run: |
           CUSTOM_TAG="${{ inputs.custom_image_tag }}"
           if [ -n "${CUSTOM_TAG}" ]; then
-            echo "Using custom image tag: ${CUSTOM_TAG}"
+            # Check if it's a full image address (contains '/') or just a tag
+            if [[ "${CUSTOM_TAG}" == *"/"* ]]; then
+              echo "Using custom full image address: ${CUSTOM_TAG}"
+              FULL_IMAGE="${CUSTOM_TAG}"
+            else
+              echo "Using custom image tag: ${CUSTOM_TAG}"
+              FULL_IMAGE="ghcr.io/${{ github.repository }}-cpu-dev:${CUSTOM_TAG}"
+            fi
             echo "IMAGE_TAG=${CUSTOM_TAG}" >> $GITHUB_ENV
-            echo "HELM_SET_IMAGE=--set decode.containers[0].image=ghcr.io/${{ github.repository }}-cpu-dev:${CUSTOM_TAG} --set prefill.containers[0].image=ghcr.io/${{ github.repository }}-cpu-dev:${CUSTOM_TAG}" >> $GITHUB_ENV
+            echo "HELM_SET_IMAGE=--set decode.containers[0].image=${FULL_IMAGE} --set decode.containers[0].imagePullPolicy=Always --set prefill.containers[0].image=${FULL_IMAGE} --set prefill.containers[0].imagePullPolicy=Always" >> $GITHUB_ENV
           else
             echo "Using default image tag from values file"
             echo "HELM_SET_IMAGE=" >> $GITHUB_ENV
@@ -128,15 +138,20 @@ jobs:
             | tee ~/pd-cpu-deployment.log
           echo "---------------------------------------" >> ~/pd-cpu-deployment.log
 
-      - name: Apply HTTPRoute
+      - name: Deploy HTTPRoute
         run: |
           cd guides/pd-disaggregation
-          # Substitute the gateway and inference pool names based on RELEASE_NAME_POSTFIX
-          sed -e "s/infra-pd-inference-gateway/infra-${RELEASE_NAME_POSTFIX}-inference-gateway/g" \
-              -e "s/gaie-pd/gaie-${RELEASE_NAME_POSTFIX}/g" \
-              -e "s/llm-d-pd-disaggregation/llm-d-${RELEASE_NAME_POSTFIX}/g" \
-              httproute.yaml | kubectl apply -f - -n "${NAMESPACE}"
-          echo "HTTPRoute applied with RELEASE_NAME_POSTFIX=${RELEASE_NAME_POSTFIX}"
+          echo "Deploying HTTPRoute with RELEASE_NAME_POSTFIX=${RELEASE_NAME_POSTFIX}..."
+          # Create a temporary HTTPRoute file with the correct names
+          sed -e "s/infra-pd-inference-gateway/${INFRA_RELEASE_NAME}-inference-gateway/g" \
+              -e "s/gaie-pd/${GAIE_RELEASE_NAME}/g" \
+              -e "s/name: llm-d-pd-disaggregation/name: llm-d-cpu-pd-${RELEASE_NAME_POSTFIX}/g" \
+              httproute.yaml > httproute-cpu.yaml
+          echo "Generated HTTPRoute configuration:"
+          cat httproute-cpu.yaml
+          kubectl apply -f httproute-cpu.yaml -n "${NAMESPACE}" \
+            | tee -a ~/pd-cpu-deployment.log
+          echo "---------------------------------------" >> ~/pd-cpu-deployment.log
 
       - name: fetch helm manifests - prepare for upload
         run: |
@@ -148,16 +163,24 @@ jobs:
           done
 
       - name: Wait for all pods to be ready
-        continue-on-error: true
         id: wait_pods
         run: |
-          kubectl wait pod \
+          echo "Waiting for all pods to be ready..."
+          if kubectl wait pod \
             --for=condition=Ready \
             --all \
             -n "${NAMESPACE}" \
-            --timeout=10m
-          echo "✅ All pods are ready."
-          kubectl get pods -n "${NAMESPACE}"
+            --timeout=10m; then
+            echo "✅ All pods are ready."
+            kubectl get pods -n "${NAMESPACE}"
+          else
+            echo "❌ Pods failed to become ready within timeout"
+            echo "=== Pod Status ==="
+            kubectl get pods -n "${NAMESPACE}"
+            echo "=== Pod Descriptions ==="
+            kubectl describe pods -n "${NAMESPACE}"
+            exit 1
+          fi
 
       - name: Check gateway pod is up
         if: always()
@@ -188,7 +211,7 @@ jobs:
           helm list -n "${NAMESPACE}" || true
           echo ""
           echo "=== Inference Pools ==="
-          kubectl get InferencePool.inference.networking.x-k8s.io -n "${NAMESPACE}" || true
+          kubectl get InferencePool.inference.networking.k8s.io -n "${NAMESPACE}" || true
           echo ""
           echo "=== HTTPRoutes ==="
           kubectl get httproutes -n "${NAMESPACE}" || true
@@ -199,10 +222,6 @@ jobs:
           echo "=== Destination Rule ==="
           kubectl get destinationrule -n "${NAMESPACE}" || true
           echo ""
-
-      - name: Sleep to wait for vLLM to be ready to respond to requests
-        if: steps.wait_pods.outcome == 'success'
-        run: sleep 360
 
       - name: Verify installation and run inference tests
         if: steps.wait_pods.outcome == 'success'
@@ -248,10 +267,5 @@ jobs:
         if: always()
         run: |
           cd guides/pd-disaggregation
-          # Delete HTTPRoute with substituted name
-          sed -e "s/infra-pd-inference-gateway/infra-${RELEASE_NAME_POSTFIX}-inference-gateway/g" \
-              -e "s/gaie-pd/gaie-${RELEASE_NAME_POSTFIX}/g" \
-              -e "s/llm-d-pd-disaggregation/llm-d-${RELEASE_NAME_POSTFIX}/g" \
-              httproute.yaml | kubectl delete -f - -n "${NAMESPACE}" || true
           helmfile destroy -e cpu -n "${NAMESPACE}"
           kubectl delete ns ${NAMESPACE}
