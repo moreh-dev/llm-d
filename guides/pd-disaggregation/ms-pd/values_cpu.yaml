@@ -1,3 +1,6 @@
+# Intel CPU configuration for PD Disaggregation
+# This configuration sets up prefill and decode services with CPU optimization
+
 multinode: false
 
 accelerator:
@@ -5,200 +8,231 @@ accelerator:
 
 modelArtifacts:
   uri: "hf://deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"
-  size: 100Gi
+  size: 10Gi
   authSecretName: "llm-d-hf-token"
   name: "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"
+  labels:
+    llm-d.ai/inference-serving: "true"
+    llm-d.ai/guide: "pd-disaggregation"
+    llm-d.ai/hardware-variant: "cpu"
+    llm-d.ai/hardware-vendor: "intel"
+    llm-d.ai/model: "DeepSeek-R1-Distill-Qwen-1.5B"
 
 routing:
   servicePort: 8000
-  parentRefs:
-    - group: gateway.networking.k8s.io
-      kind: Gateway
-      # name: infra-pd-inference-gateway # set in helmfile
-
   proxy:
-    image: ghcr.io/llm-d/llm-d-routing-sidecar:v0.4.0-rc.1
-    imagePullPolicy: IfNotPresent
+    image: ghcr.io/llm-d/llm-d-routing-sidecar:v0.5.0
     connector: nixlv2
     secure: false
 
 decode:
+  parallelism:
+    tensor: 1
   create: true
   replicas: 1
   monitoring:
     podmonitor:
-      enabled: false
-      portName: "metrics" # decode vLLM service port (from routing.proxy.targetPort)
+      enabled: true
+      portName: "vllm"  # decode vLLM service port (from routing.proxy.targetPort)
       path: "/metrics"
       interval: "30s"
   containers:
-  - name: vllm
-    image: ghcr.io/llm-d/llm-d-cpu-dev:pr-434
-    imagePullPolicy: Always
-    modelCommand: vllmServe
-    args:
-      - "--enforce-eager"
-      - "--disable-hybrid-kv-cache-manager"
-      - "--kv-transfer-config"
-      - '{"kv_connector":"NixlConnector","kv_role":"kv_both","kv_buffer_device":"cpu"}'
-    env:
-      - name: VLLM_SKIP_WARMUP
-        value: "True"
-      - name: VLLM_LOGGING_LEVEL
-        value: "DEBUG"
-      - name: NIXL_TELEMETRY_ENABLE
-        value: "1"
-      - name: VLLM_KV_CACHE_LAYOUT
-        value: "HND"
-      - name: UCX_NET_DEVICES
-        value: "all"
-      - name: OMP_NUM_THREADS
-        value: "64"
-      - name: LD_LIBRARY_PATH
-        value: "/usr/local/lib:/usr/lib:/opt/amazon/openmpi/lib"
-      - name: VLLM_NIXL_SIDE_CHANNEL_HOST
-        valueFrom:
-          fieldRef:
-            fieldPath: status.podIP
-    ports:
-      - containerPort: 8200
-        name: metrics
-        protocol: TCP
-    resources:
-      limits:
-        cpu: "64"
-        memory: 64G
-      requests:
-        cpu: "64"
-        memory: 64G
-    device: "cpu"
-    mountModelVolume: true
-    volumeMounts:
-      - name: metrics-volume
-        mountPath: /.config
-      - name: shm
-        mountPath: /dev/shm
-      - name: torch-compile-cache
-        mountPath: /.cache
-    startupProbe:
-      httpGet:
-        path: /v1/models
-        port: 8200
-      initialDelaySeconds: 15
-      periodSeconds: 30
-      timeoutSeconds: 5
-      failureThreshold: 60
-    livenessProbe:
-      httpGet:
-        path: /health
-        port: 8200
-      periodSeconds: 10
-      timeoutSeconds: 5
-      failureThreshold: 3
-    readinessProbe:
-      httpGet:
-        path: /v1/models
-        port: 8200
-      periodSeconds: 5
-      timeoutSeconds: 2
-      failureThreshold: 3
+    - name: "vllm"
+      image: ghcr.io/llm-d/llm-d-cpu:v0.5.0
+      modelCommand: vllmServe
+      args:
+        - "--block-size"
+        - "64"
+        - "--kv-transfer-config"
+        - '{"kv_connector":"NixlConnector", "kv_role":"kv_both", "kv_buffer_device":"cpu"}'
+        - "--disable-log-requests"
+        - "--disable-uvicorn-access-log"
+        - "--max-model-len"
+        - "32000"
+        - "--enforce-eager"
+        - "--disable-hybrid-kv-cache-manager"
+      securityContext:
+        fsGroup: 107
+        supplementalGroups:
+          - 107
+      env:
+        - name: UCX_TLS
+          value: "tcp"
+        - name: VLLM_NIXL_SIDE_CHANNEL_HOST
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: VLLM_NIXL_SIDE_CHANNEL_PORT
+          value: "5600"
+        # CPU specific environment variables
+        - name: VLLM_SKIP_WARMUP
+          value: "True"
+        - name: VLLM_LOGGING_LEVEL
+          value: "DEBUG"
+        - name: NIXL_TELEMETRY_ENABLE
+          value: "1"
+        - name: VLLM_KV_CACHE_LAYOUT
+          value: "HND"
+        - name: OMP_NUM_THREADS
+          value: "64"
+        - name: LD_LIBRARY_PATH
+          value: "/usr/local/lib:/usr/lib:/opt/amazon/openmpi/lib"
+      ports:
+        - containerPort: 8200
+          name: vllm
+          protocol: TCP
+        - containerPort: 5600
+          name: nixl
+          protocol: TCP
+      resources:
+        limits:
+          memory: 64Gi
+          cpu: "64"
+        requests:
+          memory: 64Gi
+          cpu: "64"
+      mountModelVolume: true
+      volumeMounts:
+        - name: metrics-volume
+          mountPath: /.config
+        - name: shm
+          mountPath: /dev/shm
+        - name: torch-compile-cache
+          mountPath: /.cache
+      startupProbe:
+        httpGet:
+          path: /v1/models
+          port: vllm
+        initialDelaySeconds: 30
+        periodSeconds: 30
+        timeoutSeconds: 10
+        failureThreshold: 60
+      livenessProbe:
+        httpGet:
+          path: /health
+          port: vllm
+        periodSeconds: 30
+        timeoutSeconds: 10
+        failureThreshold: 20
+      readinessProbe:
+        httpGet:
+          path: /v1/models
+          port: vllm
+        periodSeconds: 10
+        timeoutSeconds: 5
+        failureThreshold: 6
   volumes:
     - name: metrics-volume
       emptyDir: {}
     - name: shm
       emptyDir:
         medium: Memory
-        sizeLimit: "100Gi"
+        sizeLimit: "16Gi"
     - name: torch-compile-cache
       emptyDir: {}
 
 prefill:
+  parallelism:
+    tensor: 1
   create: true
   replicas: 1
   monitoring:
     podmonitor:
-      enabled: false
-      portName: "metrics" # decode vLLM service port (from routing.proxy.targetPort)
+      enabled: true
+      portName: "vllm"  # prefill vLLM service port (from routing.servicePort)
       path: "/metrics"
       interval: "30s"
   containers:
-  - name: vllm
-    image: ghcr.io/llm-d/llm-d-cpu-dev:pr-434
-    imagePullPolicy: Always
-    modelCommand: vllmServe
-    args:
-      - "--enforce-eager"
-      - "--disable-hybrid-kv-cache-manager"
-      - "--kv-transfer-config"
-      - '{"kv_connector":"NixlConnector","kv_role":"kv_both","kv_buffer_device":"cpu"}'
-    env:
-      - name: VLLM_SKIP_WARMUP
-        value: "True"
-      - name: VLLM_LOGGING_LEVEL
-        value: "DEBUG"
-      - name: NIXL_TELEMETRY_ENABLE
-        value: "1"
-      - name: VLLM_KV_CACHE_LAYOUT
-        value: "HND"
-      - name: UCX_NET_DEVICES
-        value: "all"
-      - name: OMP_NUM_THREADS
-        value: "64"
-      - name: LD_LIBRARY_PATH
-        value: "/usr/local/lib:/usr/lib:/opt/amazon/openmpi/lib"
-      - name: VLLM_NIXL_SIDE_CHANNEL_HOST
-        valueFrom:
-          fieldRef:
-            fieldPath: status.podIP
-    ports:
-      - containerPort: 8000
-        name: metrics
-        protocol: TCP
-    resources:
-      limits:
-        cpu: "64"
-        memory: 64G
-      requests:
-        cpu: "64"
-        memory: 64G
-    device: "cpu"
-    mountModelVolume: true
-    volumeMounts:
-      - name: metrics-volume
-        mountPath: /.config
-      - name: shm
-        mountPath: /dev/shm
-      - name: torch-compile-cache
-        mountPath: /.cache
-    startupProbe:
-      httpGet:
-        path: /v1/models
-        port: 8000
-      initialDelaySeconds: 15
-      periodSeconds: 30
-      timeoutSeconds: 5
-      failureThreshold: 60
-    livenessProbe:
-      httpGet:
-        path: /health
-        port: 8000
-      periodSeconds: 10
-      timeoutSeconds: 5
-      failureThreshold: 3
-    readinessProbe:
-      httpGet:
-        path: /v1/models
-        port: 8000
-      periodSeconds: 5
-      timeoutSeconds: 2
-      failureThreshold: 3
+    - name: "vllm"
+      image: ghcr.io/llm-d/llm-d-cpu:v0.5.0
+      modelCommand: vllmServe
+      args:
+        - "--block-size"
+        - "64"
+        - "--kv-transfer-config"
+        - '{"kv_connector":"NixlConnector", "kv_role":"kv_both", "kv_buffer_device":"cpu"}'
+        - "--disable-uvicorn-access-log"
+        - "--max-model-len"
+        - "32000"
+        - "--enforce-eager"
+        - "--disable-hybrid-kv-cache-manager"
+      securityContext:
+        fsGroup: 107
+        supplementalGroups:
+          - 107
+      env:
+        - name: UCX_TLS
+          value: "tcp"
+        - name: VLLM_NIXL_SIDE_CHANNEL_HOST
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: VLLM_NIXL_SIDE_CHANNEL_PORT
+          value: "5600"
+        # CPU specific environment variables
+        - name: VLLM_SKIP_WARMUP
+          value: "True"
+        - name: VLLM_LOGGING_LEVEL
+          value: "DEBUG"
+        - name: NIXL_TELEMETRY_ENABLE
+          value: "1"
+        - name: VLLM_KV_CACHE_LAYOUT
+          value: "HND"
+        - name: OMP_NUM_THREADS
+          value: "64"
+        - name: LD_LIBRARY_PATH
+          value: "/usr/local/lib:/usr/lib:/opt/amazon/openmpi/lib"
+      ports:
+        - containerPort: 8000
+          name: vllm
+          protocol: TCP
+        - containerPort: 5600
+          name: nixl
+          protocol: TCP
+      resources:
+        limits:
+          memory: 64Gi
+          cpu: "64"
+        requests:
+          memory: 64Gi
+          cpu: "64"
+      mountModelVolume: true
+      volumeMounts:
+        - name: metrics-volume
+          mountPath: /.config
+        - name: shm
+          mountPath: /dev/shm
+        - name: torch-compile-cache
+          mountPath: /.cache
+      startupProbe:
+        httpGet:
+          path: /v1/models
+          port: vllm
+        initialDelaySeconds: 30
+        periodSeconds: 30
+        timeoutSeconds: 10
+        failureThreshold: 60
+      livenessProbe:
+        httpGet:
+          path: /health
+          port: vllm
+        periodSeconds: 30
+        timeoutSeconds: 10
+        failureThreshold: 20
+      readinessProbe:
+        httpGet:
+          path: /v1/models
+          port: vllm
+        periodSeconds: 10
+        timeoutSeconds: 5
+        failureThreshold: 6
   volumes:
     - name: metrics-volume
       emptyDir: {}
     - name: shm
       emptyDir:
         medium: Memory
-        sizeLimit: "100Gi"
+        sizeLimit: "16Gi"
     - name: torch-compile-cache
       emptyDir: {}
 
