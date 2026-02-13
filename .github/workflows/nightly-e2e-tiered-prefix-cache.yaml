@@ -40,7 +40,7 @@ jobs:
       gateway_type: ${{ github.event.inputs.gateway_type || 'istio' }}
       required_gpus: 1
       recommended_gpus: 2
-      pod_wait_timeout: '15m'
+      pod_wait_timeout: '30m'
       pod_readiness_delay: 180
       httproute_file: ''
       # Slim transform: reduce Qwen3-32B to Qwen3-0.6B, 1 GPU, lower memory

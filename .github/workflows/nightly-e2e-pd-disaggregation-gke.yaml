@@ -34,7 +34,7 @@ jobs:
       required_gpus: 2
       recommended_gpus: 4
       accelerator_type: L4
-      pod_wait_timeout: '15m'
+      pod_wait_timeout: '30m'
       pod_readiness_delay: 180
       httproute_file: httproute.gke.yaml
       # Slim transform: reduce model to Qwen3-0.6B, 1 GPU per pod, reduce memory

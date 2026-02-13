@@ -38,7 +38,7 @@ jobs:
       gateway_type: ${{ github.event.inputs.helmfile_env || 'istio' }}
       required_gpus: 2
       recommended_gpus: 4
-      pod_wait_timeout: '15m'
+      pod_wait_timeout: '30m'
       pod_readiness_delay: 180
       skip_cleanup: ${{ github.event.inputs.skip_cleanup == 'true' }}
     secrets: inherit
