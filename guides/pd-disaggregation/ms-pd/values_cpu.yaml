@@ -49,8 +49,6 @@ decode:
         - "--disable-hybrid-kv-cache-manager"
         - "--max-model-len"
         - "32768"
-        - "--cpu-kvcache-space"
-        - "60"
       env:
         - name: UCX_TLS
           value: "tcp"
@@ -61,6 +59,8 @@ decode:
         - name: VLLM_NIXL_SIDE_CHANNEL_PORT
           value: "5600"
         # CPU specific environment variables
+        - name: VLLM_CPU_KVCACHE_SPACE
+          value: "60"
         - name: VLLM_SKIP_WARMUP
           value: "True"
         - name: VLLM_LOGGING_LEVEL
@@ -152,8 +152,6 @@ prefill:
         - "--disable-hybrid-kv-cache-manager"
         - "--max-model-len"
         - "32768"
-        - "--cpu-kvcache-space"
-        - "60"
       env:
         - name: UCX_TLS
           value: "tcp"
@@ -164,6 +162,8 @@ prefill:
         - name: VLLM_NIXL_SIDE_CHANNEL_PORT
           value: "5600"
         # CPU specific environment variables
+        - name: VLLM_CPU_KVCACHE_SPACE
+          value: "60"
         - name: VLLM_SKIP_WARMUP
           value: "True"
         - name: VLLM_LOGGING_LEVEL

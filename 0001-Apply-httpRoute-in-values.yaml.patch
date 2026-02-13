@@ -1,0 +1,77 @@
+From ee53152399b6a033f4c5823da9beda90039abba9 Mon Sep 17 00:00:00 2001
+From: yuanwu <yuan.wu@intel.com>
+Date: Tue, 18 Nov 2025 13:15:01 +0000
+Subject: [PATCH] Apply httpRoute in values.yaml
+
+Signed-off-by: yuanwu <yuan.wu@intel.com>
+---
+ .github/workflows/e2e-pd-cpu.yaml              |  8 ++++----
+ guides/pd-disaggregation/ms-pd/values_cpu.yaml | 10 +++++-----
+ 2 files changed, 9 insertions(+), 9 deletions(-)
+
+diff --git a/.github/workflows/e2e-pd-cpu.yaml b/.github/workflows/e2e-pd-cpu.yaml
+index 32437cb..43f096c 100644
+--- a/.github/workflows/e2e-pd-cpu.yaml
++++ b/.github/workflows/e2e-pd-cpu.yaml
+@@ -129,10 +129,10 @@ jobs:
+             | tee ~/pd-cpu-deployment.log
+           echo "---------------------------------------" >> ~/pd-cpu-deployment.log
+ 
+-      - name: Apply HTTPRoute
+-        run: |
+-          cd guides/pd-disaggregation
+-          kubectl apply -f httproute.yaml -n "${NAMESPACE}"
++      # - name: Apply HTTPRoute
++      #   run: |
++      #     cd guides/pd-disaggregation
++      #     kubectl apply -f httproute.yaml -n "${NAMESPACE}"
+ 
+       - name: fetch helm manifests - prepare for upload
+         run: |
+diff --git a/guides/pd-disaggregation/ms-pd/values_cpu.yaml b/guides/pd-disaggregation/ms-pd/values_cpu.yaml
+index f37105d..490a7bb 100644
+--- a/guides/pd-disaggregation/ms-pd/values_cpu.yaml
++++ b/guides/pd-disaggregation/ms-pd/values_cpu.yaml
+@@ -4,10 +4,10 @@ accelerator:
+   type: cpu
+ 
+ modelArtifacts:
+-  uri: "hf://meta-llama/Llama-3.2-3B-Instruct"
++  uri: "hf://deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"
+   size: 100Gi
+   authSecretName: "llm-d-hf-token"
+-  name: "meta-llama/Llama-3.2-3B-Instruct"
++  name: "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"
+ 
+ routing:
+   servicePort: 8000
+@@ -27,7 +27,7 @@ routing:
+     # name: gaie-pd # set in helmfile
+ 
+   httpRoute:
+-    create: false
++    create: true
+ 
+   epp:
+     create: false
+@@ -50,7 +50,7 @@ decode:
+     command: ["/bin/bash", "-c"]
+     args:
+       - |
+-          VLLM_SKIP_WARMUP=True vllm serve meta-llama/Llama-3.2-3B-Instruct \
++          VLLM_SKIP_WARMUP=True vllm serve deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B \
+           --port 8200 \
+           --gpu-memory-utilization 0.9 \
+           --enforce-eager \
+@@ -121,7 +121,7 @@ prefill:
+     command: ["/bin/bash", "-c"]
+     args:
+       - |
+-        VLLM_SKIP_WARMUP=True vllm serve meta-llama/Llama-3.2-3B-Instruct \
++        VLLM_SKIP_WARMUP=True vllm serve deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B \
+           --port 8000 \
+           --gpu-memory-utilization 0.9 \
+           --enforce-eager \
+-- 
+2.43.0
+

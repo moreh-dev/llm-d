@@ -1,0 +1,60 @@
+From 4f47c928dad043f65a43fad8d4395cd869046d0d Mon Sep 17 00:00:00 2001
+From: yuanwu <yuan.wu@intel.com>
+Date: Fri, 9 Jan 2026 07:49:29 +0000
+Subject: [PATCH] Changed decode and prefill containers from command to
+ modelCommand: vllmServe
+
+Signed-off-by: yuanwu <yuan.wu@intel.com>
+---
+ .../pd-disaggregation/ms-pd/values_hpu.yaml   | 26 +++++++++----------
+ 1 file changed, 12 insertions(+), 14 deletions(-)
+
+diff --git a/guides/pd-disaggregation/ms-pd/values_hpu.yaml b/guides/pd-disaggregation/ms-pd/values_hpu.yaml
+index b970b8c..b838799 100644
+--- a/guides/pd-disaggregation/ms-pd/values_hpu.yaml
++++ b/guides/pd-disaggregation/ms-pd/values_hpu.yaml
+@@ -39,14 +39,13 @@ decode:
+     imagePullPolicy: IfNotPresent
+     securityContext:
+       privileged: true
+-    command: ["/bin/bash", "-c"]
++    modelCommand: vllmServe
+     args:
+-      - |
+-        vllm serve meta-llama/Llama-3.2-3B-Instruct \
+-          --port 8200 \
+-          --enforce-eager \
+-          --gpu-memory-utilization 0.9 \
+-          --tensor-parallel-size 1 --kv-transfer-config '{"kv_connector":"NixlConnector","kv_role":"kv_both","kv_buffer_device":"cpu"}'
++      - "--enforce-eager"
++      - "--gpu-memory-utilization"
++      - "0.9"
++      - "--kv-transfer-config"
++      - '{"kv_connector":"NixlConnector","kv_role":"kv_both","kv_buffer_device":"cpu"}'
+     env:
+       - name: HABANA_VISIBLE_DEVICES
+         value: "0,1,2,3,4,5,6,7"
+@@ -113,14 +112,13 @@ prefill:
+     imagePullPolicy: IfNotPresent
+     securityContext:
+       privileged: true
+-    command: ["/bin/bash", "-c"]
++    modelCommand: vllmServe
+     args:
+-      - |
+-        vllm serve meta-llama/Llama-3.2-3B-Instruct \
+-          --port 8000 \
+-          --enforce-eager \
+-          --gpu-memory-utilization 0.9 \
+-          --tensor-parallel-size 1 --kv-transfer-config '{"kv_connector":"NixlConnector","kv_role":"kv_both","kv_buffer_device":"cpu"}'
++      - "--enforce-eager"
++      - "--gpu-memory-utilization"
++      - "0.9"
++      - "--kv-transfer-config"
++      - '{"kv_connector":"NixlConnector","kv_role":"kv_both","kv_buffer_device":"cpu"}'
+     env:
+       - name: HABANA_VISIBLE_DEVICES
+         value: "0,1,2,3,4,5,6,7"
+-- 
+2.43.0
+
