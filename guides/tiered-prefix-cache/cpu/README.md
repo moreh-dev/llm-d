@@ -197,7 +197,7 @@ The following benchmark results demonstrate the performance improvements of usin
 * **vLLM Configuration:**
   * `gpu_memory_utilization` was set to `0.65` to reduce the pressure on the benchmark tool. In
     production configuration this is typically set to a higher value such as 0.9.
-  * CPU offloading was enabled with `cpu_bytes_to_use` set to `107374182400` (100GB) of CPU cache.
+  * CPU offloading was enabled with `num_cpu_blocks` set to `41000`, which provides approximately 100GB of CPU cache.
 * **LMCache Configuration:**
   * For LMCache setup, `LMCACHE_MAX_LOCAL_CPU_SIZE` is set to 100 GB.
 
