@@ -307,6 +307,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
+      - name: Export Git SHA
+        id: git-sha
+        run: |
+          echo "shortsha=$(git rev-parse --short=7 HEAD)" >> $GITHUB_OUTPUT
+          echo "fullsha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -413,6 +419,8 @@ jobs:
           mkdir -p /tmp/digests/${{ matrix.os }}
           digest="${{ steps.build-image-final-layer.outputs.digest }}"
           touch "/tmp/digests/${{ matrix.os }}/${digest#sha256:}"
+          echo "${{ steps.git-sha.outputs.shortsha }}" > /tmp/digests/${{ matrix.os }}/git-sha.txt
+          echo "${{ steps.git-sha.outputs.fullsha }}" > /tmp/digests/${{ matrix.os }}/git-fullsha.txt
 
       - name: Upload digest
         if: ${{ steps.build-image-final-layer.outputs.digest != '' }}
@@ -432,6 +440,7 @@ jobs:
       rhel_ok: ${{ steps.check.outputs.rhel_ok }}
       ubuntu_ok: ${{ steps.check.outputs.ubuntu_ok }}
       shortsha: ${{ steps.export-sha.outputs.shortsha }}
+      fullsha: ${{ steps.export-sha.outputs.fullsha }}
     steps:
       - name: Download all digests (best-effort)
         uses: actions/download-artifact@v4
@@ -456,13 +465,30 @@ jobs:
           echo "=== Ubuntu digests ==="
           ls -la /tmp/digests/ubuntu/ || echo "No Ubuntu digests"
 
-      - name: Checkout code
-        uses: actions/checkout@v6
-
-      - name: Export Git Sha
+      - name: Read Git SHA from build artifacts
         id: export-sha
         run: |
-          echo "shortsha=$(git rev-parse --short=7 HEAD)" >> $GITHUB_OUTPUT
+          # Try to read the git SHA from any of the downloaded artifacts
+          # All builds should have the same git SHA, so we just take the first one we find
+          if [ -f /tmp/digests-raw/digests-cuda-dev-rhel-amd64/git-sha.txt ]; then
+            shortsha=$(cat /tmp/digests-raw/digests-cuda-dev-rhel-amd64/git-sha.txt)
+            fullsha=$(cat /tmp/digests-raw/digests-cuda-dev-rhel-amd64/git-fullsha.txt)
+          elif [ -f /tmp/digests-raw/digests-cuda-dev-rhel-arm64/git-sha.txt ]; then
+            shortsha=$(cat /tmp/digests-raw/digests-cuda-dev-rhel-arm64/git-sha.txt)
+            fullsha=$(cat /tmp/digests-raw/digests-cuda-dev-rhel-arm64/git-fullsha.txt)
+          elif [ -f /tmp/digests-raw/digests-cuda-dev-ubuntu-amd64/git-sha.txt ]; then
+            shortsha=$(cat /tmp/digests-raw/digests-cuda-dev-ubuntu-amd64/git-sha.txt)
+            fullsha=$(cat /tmp/digests-raw/digests-cuda-dev-ubuntu-amd64/git-fullsha.txt)
+          elif [ -f /tmp/digests-raw/digests-cuda-dev-ubuntu-arm64/git-sha.txt ]; then
+            shortsha=$(cat /tmp/digests-raw/digests-cuda-dev-ubuntu-arm64/git-sha.txt)
+            fullsha=$(cat /tmp/digests-raw/digests-cuda-dev-ubuntu-arm64/git-fullsha.txt)
+          else
+            echo "Warning: No git-sha.txt found, using current HEAD"
+            shortsha=$(git rev-parse --short=7 HEAD)
+            fullsha=$(git rev-parse HEAD)
+          fi
+          echo "shortsha=${shortsha}" >> $GITHUB_OUTPUT
+          echo "fullsha=${fullsha}" >> $GITHUB_OUTPUT
 
       - id: check
         shell: bash
@@ -471,11 +497,24 @@ jobs:
           rhel=(/tmp/digests/rhel/*)
           ubuntu=(/tmp/digests/ubuntu/*)
 
-          any=false; [ ${#rhel[@]} -gt 0 ] || [ ${#ubuntu[@]} -gt 0 ] && any=true
-          rhel_ok=false;   [ ${#rhel[@]} -gt 0 ] && rhel_ok=true
-          ubuntu_ok=false; [ ${#ubuntu[@]} -gt 0 ] && ubuntu_ok=true
+          # Exclude git-sha.txt and git-fullsha.txt from digest count
+          rhel_count=0
+          for file in "${rhel[@]}"; do
+            filename="$(basename "$file")"
+            [[ "$filename" != "git-sha.txt" && "$filename" != "git-fullsha.txt" ]] && ((rhel_count++))
+          done
 
-          echo "Downloaded ${#rhel[@]} RHEL digest(s), ${#ubuntu[@]} Ubuntu digest(s)"
+          ubuntu_count=0
+          for file in "${ubuntu[@]}"; do
+            filename="$(basename "$file")"
+            [[ "$filename" != "git-sha.txt" && "$filename" != "git-fullsha.txt" ]] && ((ubuntu_count++))
+          done
+
+          any=false; [ ${rhel_count} -gt 0 ] || [ ${ubuntu_count} -gt 0 ] && any=true
+          rhel_ok=false;   [ ${rhel_count} -gt 0 ] && rhel_ok=true
+          ubuntu_ok=false; [ ${ubuntu_count} -gt 0 ] && ubuntu_ok=true
+
+          echo "Downloaded ${rhel_count} RHEL digest(s), ${ubuntu_count} Ubuntu digest(s)"
           echo "any_succeeded=${any}"   >> "$GITHUB_OUTPUT"
           echo "rhel_ok=${rhel_ok}"     >> "$GITHUB_OUTPUT"
           echo "ubuntu_ok=${ubuntu_ok}" >> "$GITHUB_OUTPUT"
@@ -566,15 +605,19 @@ jobs:
         run: |
           set -x
           SHORT_SHA="${{ needs.cuda-success-check.outputs.shortsha }}"
+          FULL_SHA="${{ needs.cuda-success-check.outputs.fullsha }}"
           # build the list of source images (by digest)
           sources=""
           for digest in *; do
+            # Skip git-sha metadata files
+            [[ "$digest" == "git-sha.txt" || "$digest" == "git-fullsha.txt" ]] && continue
             image="${{ env.REGISTRY }}/${{ github.repository }}-cuda-dev${{ matrix.image_suffix }}"
             sources="$sources ${image}@sha256:$digest"
           done
 
           # create manifest and tag it
           tags="-t ${{ env.REGISTRY }}/${{ github.repository }}-cuda-dev${{ matrix.image_suffix }}:sha-${SHORT_SHA}"
+          tags="$tags -t ${{ env.REGISTRY }}/${{ github.repository }}-cuda-dev${{ matrix.image_suffix }}:sha-${FULL_SHA}"
           if [ -n "${{ github.event.pull_request.number }}" ]; then
             tags="$tags -t ${{ env.REGISTRY }}/${{ github.repository }}-cuda-dev${{ matrix.image_suffix }}:pr-${{ github.event.pull_request.number }}"
           fi
@@ -649,6 +692,12 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
+
+      - name: Export Git SHA
+        id: git-sha
+        run: |
+          echo "shortsha=$(git rev-parse --short=7 HEAD)" >> $GITHUB_OUTPUT
+          echo "fullsha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -746,6 +795,8 @@ jobs:
           mkdir -p /tmp/digests/${{ matrix.os }}
           digest="${{ steps.build-image-final-layer.outputs.digest }}"
           touch "/tmp/digests/${{ matrix.os }}/${digest#sha256:}"
+          echo "${{ steps.git-sha.outputs.shortsha }}" > /tmp/digests/${{ matrix.os }}/git-sha.txt
+          echo "${{ steps.git-sha.outputs.fullsha }}" > /tmp/digests/${{ matrix.os }}/git-fullsha.txt
 
       - name: Upload digest
         if: ${{ steps.build-image-final-layer.outputs.digest != '' }}
@@ -764,6 +815,7 @@ jobs:
       any_succeeded: ${{ steps.check.outputs.any_succeeded }}
       rhel_ok: ${{ steps.check.outputs.rhel_ok }}
       shortsha: ${{ steps.export-sha.outputs.shortsha }}
+      fullsha: ${{ steps.export-sha.outputs.fullsha }}
     steps:
       - name: Download all digests (best-effort)
         uses: actions/download-artifact@v4
@@ -784,13 +836,23 @@ jobs:
           echo "=== RHEL digests ==="
           ls -la /tmp/digests/rhel/ || echo "No RHEL digests"
 
-      - name: Checkout code
-        uses: actions/checkout@v6
-
-      - name: Export Git Sha
+      - name: Read Git SHA from build artifacts
         id: export-sha
         run: |
-          echo "shortsha=$(git rev-parse --short=7 HEAD)" >> $GITHUB_OUTPUT
+          # Try to read the git SHA from any of the downloaded artifacts
+          if [ -f /tmp/digests-raw/digests-aws-dev-rhel-amd64/git-sha.txt ]; then
+            shortsha=$(cat /tmp/digests-raw/digests-aws-dev-rhel-amd64/git-sha.txt)
+            fullsha=$(cat /tmp/digests-raw/digests-aws-dev-rhel-amd64/git-fullsha.txt)
+          elif [ -f /tmp/digests-raw/digests-aws-dev-rhel-arm64/git-sha.txt ]; then
+            shortsha=$(cat /tmp/digests-raw/digests-aws-dev-rhel-arm64/git-sha.txt)
+            fullsha=$(cat /tmp/digests-raw/digests-aws-dev-rhel-arm64/git-fullsha.txt)
+          else
+            echo "Warning: No git-sha.txt found, using current HEAD"
+            shortsha=$(git rev-parse --short=7 HEAD)
+            fullsha=$(git rev-parse HEAD)
+          fi
+          echo "shortsha=${shortsha}" >> $GITHUB_OUTPUT
+          echo "fullsha=${fullsha}" >> $GITHUB_OUTPUT
 
       - id: check
         shell: bash
@@ -798,10 +860,17 @@ jobs:
           shopt -s nullglob
           rhel=(/tmp/digests/rhel/*)
 
-          any=false; [ ${#rhel[@]} -gt 0 ] && any=true
-          rhel_ok=false; [ ${#rhel[@]} -gt 0 ] && rhel_ok=true
+          # Exclude git-sha.txt and git-fullsha.txt from digest count
+          rhel_count=0
+          for file in "${rhel[@]}"; do
+            filename="$(basename "$file")"
+            [[ "$filename" != "git-sha.txt" && "$filename" != "git-fullsha.txt" ]] && ((rhel_count++))
+          done
 
-          echo "Downloaded ${#rhel[@]} RHEL digest(s)"
+          any=false; [ ${rhel_count} -gt 0 ] && any=true
+          rhel_ok=false; [ ${rhel_count} -gt 0 ] && rhel_ok=true
+
+          echo "Downloaded ${rhel_count} RHEL digest(s)"
           echo "any_succeeded=${any}" >> "$GITHUB_OUTPUT"
           echo "rhel_ok=${rhel_ok}" >> "$GITHUB_OUTPUT"
 
@@ -867,15 +936,19 @@ jobs:
         run: |
           set -x
           SHORT_SHA="${{ needs.aws-success-check.outputs.shortsha }}"
+          FULL_SHA="${{ needs.aws-success-check.outputs.fullsha }}"
           # build the list of source images (by digest)
           sources=""
           for digest in *; do
+            # Skip git-sha metadata files
+            [[ "$digest" == "git-sha.txt" || "$digest" == "git-fullsha.txt" ]] && continue
             image="${{ env.REGISTRY }}/${{ github.repository }}-aws-dev"
             sources="$sources ${image}@sha256:$digest"
           done
 
           # create manifest and tag it
           tags="-t ${{ env.REGISTRY }}/${{ github.repository }}-aws-dev:sha-${SHORT_SHA}"
+          tags="$tags -t ${{ env.REGISTRY }}/${{ github.repository }}-aws-dev:sha-${FULL_SHA}"
           if [ -n "${{ github.event.pull_request.number }}" ]; then
             tags="$tags -t ${{ env.REGISTRY }}/${{ github.repository }}-aws-dev:pr-${{ github.event.pull_request.number }}"
           fi
