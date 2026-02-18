@@ -16,7 +16,7 @@ set -Eeux
 # - CUDA_HOME: The path to your Cuda Runtime
 # - NVSHMEM_USE_GIT: whether to use NVSHMEM git repo or nvidia developer source download (true/false) - defaults to true
 # - NVSHMEM_REPO: if using git, what repo of NVSHMEM should be used
-# - NVSHMEM_VERSION: NVSHMEM version to build (e.g., 3.3.20, or git ref if NVSHMEM_USE_GIT=true)
+# - NVSHMEM_VERSION: NVSHMEM version to build (e.g., 3.4.5, or git tag if NVSHMEM_USE_GIT=true). MINIMUM VERSION going forward is 3.4.5. Format supports regular version for developer downloads and v<version>-Number for git ref tags.
 # - NVSHMEM_DIR: NVSHMEM installation directory
 # - NVSHMEM_CUDA_ARCHITECTURES: CUDA architectures to build for
 # - UCX_PREFIX: Path to UCX installation
@@ -25,6 +25,23 @@ set -Eeux
 # - PYTHON_VERSION: Python version (e.g., 3.12)
 
 cd /tmp
+
+# Version check: enforce minimum NVSHMEM version 3.4.5
+MIN_VERSION="3.4.5"
+
+# Normalize version string: strip 'v' prefix and git suffix (e.g., v3.4.5-0 -> 3.4.5)
+NORMALIZED_VERSION="${NVSHMEM_VERSION#v}"  # Remove leading 'v'
+NORMALIZED_VERSION="${NORMALIZED_VERSION%%-*}"  # Remove trailing '-X' suffix
+
+# Compare versions using sort -V (version sort)
+if ! printf '%s\n%s\n' "${MIN_VERSION}" "${NORMALIZED_VERSION}" | sort -V -C; then
+    echo "ERROR: NVSHMEM version ${NVSHMEM_VERSION} is not supported."
+    echo "Minimum required version is ${MIN_VERSION}."
+    echo "Please use NVSHMEM version ${MIN_VERSION} or higher."
+    exit 1
+fi
+
+echo "=== Using NVSHMEM version ${NVSHMEM_VERSION} (normalized: ${NORMALIZED_VERSION}) ==="
 
 if [ "${BUILD_DEBUG}" = "true" ]; then
     # Disable sccache for nvshmem build in debug mode for nvcc + sccache + cmake weirdness. 
@@ -45,20 +62,6 @@ else
 
     tar -xf "nvshmem_src_cuda${CUDA_MAJOR}.tar.gz"
     cd nvshmem_src
-fi
-
-# No need for CKS patches if running on EKS only
-if [ "${ENABLE_EFA}" != "true" ] || [ "$TARGETOS" = "ubuntu" ]; then
-    # Prior to NVSHMEM_VERSION 3.4.5 we have to carry a set of patches for device renaming.
-    # For more info, see: https://github.com/NVIDIA/nvshmem/releases/tag/v3.4.5-0, specifically regarding NVSHMEM_HCA_PREFIX
-    for i in /tmp/patches/cks_nvshmem"${NVSHMEM_VERSION}".patch /tmp/patches/nvshmem_zero_ibv_ah_attr_"${NVSHMEM_VERSION}".patch; do
-        if [[ -f $i ]]; then
-            echo "Applying patch: $i"
-            git apply $i
-        else
-            echo "Unable to find patch matching nvshmem version ${NVSHMEM_VERSION}: $i"
-        fi
-    done
 fi
 
 # Ubuntu image needs to be built against Ubuntu 20.04 and EFA only supports 22.04 and 24.04.
