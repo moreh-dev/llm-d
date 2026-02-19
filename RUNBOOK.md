@@ -65,7 +65,7 @@ curl http://localhost:8080/v1/models
 {"data":[{"created":1771459693,"id":"Qwen/Qwen3-0.6B","max_model_len":40960,"object":"model","owned_by":"vllm","parent":null,"permission":[{"allow_create_engine":false,"allow_fine_tuning":false,"allow_logprobs":true,"allow_sampling":true,"allow_search_indices":false,"allow_view":true,"created":1771459693,"group":null,"id":"modelperm-8c56714797ab69a0","is_blocking":false,"object":"model_permission","organization":"*"}],"root":"Qwen/Qwen3-0.6B"}],"object":"list"}% 
 ```
 
-### P/D
+# P/D
 
 - exec into the nodes and change the filesystem
 
@@ -144,13 +144,32 @@ curl http://localhost:8000/v1/chat/completions \
 >> {"choices":[{"finish_reason":"stop","index":0,"logprobs":null,"message":{"annotations":null,"audio":null,"content":"Hello! How can I help you today?","function_call":null,"reasoning":"User says \"Hello!\" It's a greeting. Should respond politely. No special instructions. Should be friendly.","reasoning_content":"User says \"Hello!\" It's a greeting. Should respond politely. No special instructions. Should be friendly.","refusal":null,"role":"assistant","tool_calls":[]},"stop_reason":null,"token_ids":null}],"created":1771467418,"id":"chatcmpl-ddf6dbcc-df81-4e5b-b960-51c2f1eba942","kv_transfer_params":null,"model":"openai/gpt-oss-120b","object":"chat.completion","prompt_logprobs":null,"prompt_token_ids":null,"service_tier":null,"system_fingerprint":null,"usage":{"completion_tokens":40,"prompt_tokens":67,"prompt_tokens_details":null,"total_tokens":107}}%  
 ```
 
+### Benchmark
+
 - run p/d benchmark
 ```bash
 BENCHMARK_DIR=bench-pd-test OUTPUT_DIR=bench-pd-test-output ./run-bench.sh
 ```
 
+result
 ```bash
-
+"latency": {
+    "request_latency": {
+    "mean": 15.286510281667788,
+    "min": 7.219938760999867,
+    "max": 18.358723880999605,
+    "p0.1": 7.376207157039831,
+    "p1": 9.347114582510384,
+    "p5": 11.522130686849959,
+    "p10": 12.400420037998993,
+    "p25": 14.307325921749907,
+    "median": 16.02811132950046,
+    "p75": 16.421380162998958,
+    "p90": 16.747520571800305,
+    "p95": 17.04093554289884,
+    "p99": 17.71396104075935,
+    "p99.9": 18.248000338031964
+    },
 ```
 
 - deploy baseline
@@ -165,8 +184,21 @@ kubectl apply -f baseline.yaml
 BENCHMARK_DIR=bench-baseline-test OUTPUT_DIR=bench-baseline-test-output RAW_IP=10.145.51.67 RAW_PORT=8000  ./run-bench.sh
 ```
 
-```bash
-
+"latency": {
+    "request_latency": {
+    "mean": 15.286510281667788,
+    "min": 7.219938760999867,
+    "max": 18.358723880999605,
+    "p0.1": 7.376207157039831,
+    "p1": 9.347114582510384,
+    "p5": 11.522130686849959,
+    "p10": 12.400420037998993,
+    "p25": 14.307325921749907,
+    "median": 16.02811132950046,
+    "p75": 16.421380162998958,
+    "p90": 16.747520571800305,
+    "p95": 17.04093554289884,
+    "p99": 17.71396104075935,
+    "p99.9": 18.248000338031964
+    },
 ```
-
-
