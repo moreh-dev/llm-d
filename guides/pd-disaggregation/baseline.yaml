@@ -1,0 +1,84 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: baseline
+  labels:
+    app: baseline
+spec:
+  type: ClusterIP
+  selector:
+    app: baseline
+  ports:
+    - name: http
+      port: 8000
+      targetPort: 8000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: baseline
+  labels:
+    app: baseline
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: baseline
+  template:
+    metadata:
+      labels:
+        app: baseline
+    spec:
+      volumes:
+        - name: hf-cache
+          hostPath:
+            path: /mnt/filesystem-x7/hf-cache
+            type: DirectoryOrCreate
+        - name: vllm-cache
+          hostPath:
+            path: /mnt/filesystem-x7/vllm-cache
+            type: DirectoryOrCreate
+        - name: shm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 2Gi
+
+      containers:
+        - name: vllm
+          image: ghcr.io/llm-d/llm-d-cuda:v0.5.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8000
+
+          # Make HF/transformers use the hostPath cache
+          env:
+            - name: HF_HOME
+              value: /mnt/hf-cache
+            - name: VLLM_CACHE_DIR
+              value: /mnt/vllm-cache
+
+          volumeMounts:
+            - name: hf-cache
+              mountPath: /mnt/hf-cache
+            - name: vllm-cache
+              mountPath: /mnt/vllm-cache
+            - name: shm
+              mountPath: /dev/shm
+
+          command: ["/bin/bash", "-lc"]
+          args:
+            - |
+              vllm serve openai/gpt-oss-120b \
+                --host 0.0.0.0 \
+                --port 8000
+
+          resources:
+            requests:
+              cpu: "16"
+              memory: "64Gi"
+              nvidia.com/gpu: "1"
+            limits:
+              cpu: "16"
+              memory: "64Gi"
+              nvidia.com/gpu: "1"

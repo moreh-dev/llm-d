@@ -26,7 +26,7 @@ decode:
   replicas: 1
   monitoring:
     podmonitor:
-      enabled: true
+      enabled: false
       portName: "vllm"  # decode vLLM service port (from routing.proxy.targetPort)
       path: "/metrics"
       interval: "30s"
@@ -47,6 +47,12 @@ decode:
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
+        - name: HF_HOME
+          value: "/mnt/hf-cache"
+        - name: VLLM_CACHE_DIR
+          value: "/mnt/vllm-cache"
+        - name: UCX_NET_DEVICES
+          value: "mlx5_0:1,mlx5_1:1,mlx5_2:1,mlx5_3:1,mlx5_4:1,mlx5_5:1,mlx5_6:1,mlx5_7:1,mlx5_8:1,mlx5_9:1,mlx5_10:1,mlx5_11:1"
       ports:
         - containerPort: 8200
           name: vllm
@@ -59,20 +65,21 @@ decode:
           memory: 64Gi
           cpu: "16"
           # note: GPU resources get controlled by parallelism + accelerators above
-          rdma/ib: 1
+          # rdma/ib: 1
         requests:
           memory: 64Gi
           cpu: "16"
           # note: GPU resources get controlled by parallelism + accelerators above
-          rdma/ib: 1
-      mountModelVolume: true
+          # rdma/ib: 1
       volumeMounts:
         - name: metrics-volume
           mountPath: /.config
         - name: shm
           mountPath: /dev/shm
-        - name: torch-compile-cache
-          mountPath: /.cache
+        - name: vllm-cache
+          mountPath: /mnt/vllm-cache
+        - name: hf-cache
+          mountPath: /mnt/hf-cache
       startupProbe:
         httpGet:
           path: /v1/models
@@ -102,8 +109,14 @@ decode:
       emptyDir:
         medium: Memory
         sizeLimit: "16Gi"
-    - name: torch-compile-cache
-      emptyDir: {}
+    - name: vllm-cache
+      hostPath:
+        path: /mnt/filesystem-x7/vllm-cache
+        type: DirectoryOrCreate
+    - name: hf-cache
+      hostPath:
+        path: /mnt/filesystem-x7/hf-cache
+        type: DirectoryOrCreate
 
 prefill:
   parallelism:
@@ -112,7 +125,7 @@ prefill:
   replicas: 4
   monitoring:
     podmonitor:
-      enabled: true
+      enabled: false
       portName: "vllm"  # prefill vLLM service port (from routing.servicePort)
       path: "/metrics"
       interval: "30s"
@@ -133,6 +146,12 @@ prefill:
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
+        - name: HF_HOME
+          value: "/mnt/hf-cache"
+        - name: VLLM_CACHE_DIR
+          value: "/mnt/vllm-cache"
+        - name: UCX_NET_DEVICES
+          value: "mlx5_0:1,mlx5_1:1,mlx5_2:1,mlx5_3:1,mlx5_4:1,mlx5_5:1,mlx5_6:1,mlx5_7:1,mlx5_8:1,mlx5_9:1,mlx5_10:1,mlx5_11:1"
       ports:
         - containerPort: 8000
           name: vllm
@@ -145,20 +164,21 @@ prefill:
           memory: 64Gi
           cpu: "8"
           # note: GPU resources get controlled by parallelism + accelerators above
-          rdma/ib: 1
+          # rdma/ib: 1
         requests:
           memory: 64Gi
           cpu: "8"
           # note: GPU resources get controlled by parallelism + accelerators above
-          rdma/ib: 1
-      mountModelVolume: true
+          # rdma/ib: 1
       volumeMounts:
         - name: metrics-volume
           mountPath: /.config
         - name: shm
           mountPath: /dev/shm
-        - name: torch-compile-cache
-          mountPath: /.cache
+        - name: vllm-cache
+          mountPath: /mnt/vllm-cache
+        - name: hf-cache
+          mountPath: /mnt/hf-cache
       startupProbe:
         httpGet:
           path: /v1/models
@@ -188,5 +208,11 @@ prefill:
       emptyDir:
         medium: Memory
         sizeLimit: "16Gi"
-    - name: torch-compile-cache
-      emptyDir: {}
+    - name: vllm-cache
+      hostPath:
+        path: /mnt/filesystem-x7/vllm-cache
+        type: DirectoryOrCreate
+    - name: hf-cache
+      hostPath:
+        path: /mnt/filesystem-x7/hf-cache
+        type: DirectoryOrCreate

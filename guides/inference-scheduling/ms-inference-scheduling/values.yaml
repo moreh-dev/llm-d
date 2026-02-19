@@ -1,9 +1,9 @@
 multinode: false
 
 modelArtifacts:
-  uri: "hf://Qwen/Qwen3-32B"
-  name: "Qwen/Qwen3-32B"
-  size: 80Gi
+  uri: "hf://Qwen/Qwen3-0.6B"
+  name: "Qwen/Qwen3-0.6B"
+  size: 2Gi
   authSecretName: "llm-d-hf-token"
   labels:
     llm-d.ai/inference-serving: "true"
@@ -23,12 +23,16 @@ accelerator:  # controls specialized hardware Type
 decode:
   create: true
   parallelism:
-    tensor: 2
+    tensor: 1
     data: 1
-  replicas: 8
+  replicas: 1
+  podSecurityContext:
+    runAsUser: 0
+    runAsGroup: 0
+    runAsNonRoot: false
   monitoring:
     podmonitor:
-      enabled: true
+      enabled: false # switched this
       portName: "vllm"  # decode vLLM service port (from routing.proxy.targetPort)
       path: "/metrics"
       interval: "30s"
@@ -40,6 +44,11 @@ decode:
         - "--disable-uvicorn-access-log"
         - "--gpu-memory-utilization=0.95"
         # - "--tensor-parallel-size=2" # added automatically from 'parallelism'
+      env:
+        - name: HF_HOME
+          value: "/mnt/hf-cache"
+        - name: VLLM_CACHE_DIR
+          value: "/mnt/vllm-cache"
       ports:
         - containerPort: 8000
           name: vllm
@@ -47,20 +56,21 @@ decode:
       resources:
         limits:
           # nvidia.com/gpu: '2' # added automatically from 'parallelism'
-          cpu: '32'
-          memory: 100Gi
+          cpu: '4'
+          memory: 50Gi
         requests:
           # nvidia.com/gpu: '2' # added automatically from 'parallelism'
-          cpu: '32'
-          memory: 100Gi
-      mountModelVolume: true
+          cpu: '4'
+          memory: 50Gi
       volumeMounts:
         - name: metrics-volume
           mountPath: /.config
         - name: shm
           mountPath: /dev/shm
-        - name: torch-compile-cache
-          mountPath: /.cache
+        - name: vllm-cache
+          mountPath: /mnt/vllm-cache
+        - name: hf-cache
+          mountPath: /mnt/hf-cache
       startupProbe:
         httpGet:
           path: /v1/models
@@ -86,12 +96,18 @@ decode:
   volumes:
     - name: metrics-volume
       emptyDir: {}
-    - name: torch-compile-cache
-      emptyDir: {}
     - name: shm
       emptyDir:
         medium: Memory
         sizeLimit: 20Gi
+    - name: vllm-cache
+      hostPath:
+        path: /mnt/filesystem-x7/vllm-cache
+        type: DirectoryOrCreate
+    - name: hf-cache
+      hostPath:
+        path: /mnt/filesystem-x7/hf-cache
+        type: DirectoryOrCreate
 
 # PD disabled in this example
 prefill:
