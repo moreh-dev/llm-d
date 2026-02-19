@@ -179,26 +179,35 @@ kubectl delete httproute llm-d-pd-disaggregation -n $NAMESPACE
 kubectl apply -f baseline.yaml
 ```
 
-- run baseline benchmark
+- run baseline benchmark (raw IP is the service addr)
 ```bash
+kubectl get services
+
+NAME       TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)    AGE
+baseline   ClusterIP   10.145.51.67   <none>        8000/TCP   25m
+```
+
+```
 BENCHMARK_DIR=bench-baseline-test OUTPUT_DIR=bench-baseline-test-output RAW_IP=10.145.51.67 RAW_PORT=8000  ./run-bench.sh
 ```
 
-"latency": {
-    "request_latency": {
-    "mean": 15.286510281667788,
-    "min": 7.219938760999867,
-    "max": 18.358723880999605,
-    "p0.1": 7.376207157039831,
-    "p1": 9.347114582510384,
-    "p5": 11.522130686849959,
-    "p10": 12.400420037998993,
-    "p25": 14.307325921749907,
-    "median": 16.02811132950046,
-    "p75": 16.421380162998958,
-    "p90": 16.747520571800305,
-    "p95": 17.04093554289884,
-    "p99": 17.71396104075935,
-    "p99.9": 18.248000338031964
-    },
+result
+```
+    "latency": {
+      "request_latency": {
+        "mean": 29.178721353981665,
+        "min": 10.88147312699948,
+        "max": 40.27823549800087,
+        "p0.1": 11.280841469750325,
+        "p1": 13.43609910445961,
+        "p5": 17.140505255649533,
+        "p10": 19.76468971650047,
+        "p25": 25.74203602750049,
+        "median": 30.335301284999332,
+        "p75": 33.90098686550027,
+        "p90": 36.13730210569993,
+        "p95": 37.28731653069853,
+        "p99": 39.2887882678109,
+        "p99.9": 40.169823912800226
+      },
 ```
