@@ -116,9 +116,13 @@ On some nodes, sometimes (on the same nodes sometimes It works), Im getting:
 ```
 So I set:
 ```
-UCX_IB_BLACKLIST=mlx5_12
+UCX_NET_DEVICES=mlx5_0:1,mlx5_1:1,mlx5_2:1,mlx5_3:1,mlx5_4:1,mlx5_5:1,mlx5_6:1,mlx5_7:1,mlx5_8:1,mlx5_9:1,mlx5_10:1,mlx5_11:1
 ```
 
+- this ended up giving me all valid NICS
+
+
+- deploy with these env vars
 
 ```bash
 cd guides/pd-disaggregation
