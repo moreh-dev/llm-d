@@ -5,10 +5,9 @@
 # ==============================================================================
 NAMESPACE="${NAMESPACE:-llm-d-nebius}"
 GATEWAY_NAME="${GATEWAY_NAME:-infra-pd-inference-gateway}"
-BENCHMARK_DIR=./bench-baseline-test
-OUTPUT_DIR="./bench-baseline-test-output"
-RAW_IP="10.145.51.67"
-RAW_PORT="8000"
+BENCHMARK_DIR="${BENCHMARK_DIR:-./bench-run}"
+OUTPUT_DIR="${OUTPUT_DIR:-./bench-run-output}"
+RAW_PORT="${RAW_PORT:-80}"
 
 # Colors for output
 GREEN='\033[0;32m'

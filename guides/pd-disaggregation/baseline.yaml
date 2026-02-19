@@ -20,7 +20,7 @@ metadata:
   labels:
     app: baseline
 spec:
-  replicas: 1
+  replicas: 8
   selector:
     matchLabels:
       app: baseline

@@ -144,4 +144,29 @@ curl http://localhost:8000/v1/chat/completions \
 >> {"choices":[{"finish_reason":"stop","index":0,"logprobs":null,"message":{"annotations":null,"audio":null,"content":"Hello! How can I help you today?","function_call":null,"reasoning":"User says \"Hello!\" It's a greeting. Should respond politely. No special instructions. Should be friendly.","reasoning_content":"User says \"Hello!\" It's a greeting. Should respond politely. No special instructions. Should be friendly.","refusal":null,"role":"assistant","tool_calls":[]},"stop_reason":null,"token_ids":null}],"created":1771467418,"id":"chatcmpl-ddf6dbcc-df81-4e5b-b960-51c2f1eba942","kv_transfer_params":null,"model":"openai/gpt-oss-120b","object":"chat.completion","prompt_logprobs":null,"prompt_token_ids":null,"service_tier":null,"system_fingerprint":null,"usage":{"completion_tokens":40,"prompt_tokens":67,"prompt_tokens_details":null,"total_tokens":107}}%  
 ```
 
+- run p/d benchmark
+```bash
+BENCHMARK_DIR=bench-pd-test OUTPUT_DIR=bench-pd-test-output ./run-bench.sh
+```
+
+```bash
+
+```
+
+- deploy baseline
+```bash
+helm uninstall ms-pd gaie-pd infra-pd -n $NAMESPACE
+kubectl delete httproute llm-d-pd-disaggregation -n $NAMESPACE
+kubectl apply -f baseline.yaml
+```
+
+- run baseline benchmark
+```bash
+BENCHMARK_DIR=bench-baseline-test OUTPUT_DIR=bench-baseline-test-output RAW_IP=10.145.51.67 RAW_PORT=8000  ./run-bench.sh
+```
+
+```bash
+
+```
+
 
