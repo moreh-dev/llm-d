@@ -54,14 +54,23 @@ ARG DEEPEP_VERSION="gb200_blog_part_2"
 ARG DEEPGEMM_REPO="https://github.com/deepseek-ai/DeepGEMM"
 ARG DEEPGEMM_VERSION="v2.1.0"
 ARG FLASHINFER_REPO="https://github.com/flashinfer-ai/flashinfer.git"
-ARG FLASHINFER_VERSION="v0.6.1"
+ARG FLASHINFER_VERSION="v0.6.3"
 
 # vLLM build settings
 ARG VLLM_REPO="https://github.com/vllm-project/vllm.git"
-ARG VLLM_COMMIT_SHA="v0.15.0rc1"
-ARG VLLM_PRECOMPILED_WHEEL_COMMIT="v0.15.0rc1"
+ARG VLLM_COMMIT_SHA="main"
+#ARG VLLM_PRECOMPILED_WHEEL_COMMIT="f0d525171557e3fe74e8e6df52257f9d66831d3f"
 ARG VLLM_PREBUILT=0
-ARG VLLM_USE_PRECOMPILED=1
+# Build from source for CUDA 13.0 (precompiled wheels only exist for CUDA 12.x)
+ARG VLLM_USE_PRECOMPILED=0
+
+# Python-only cherry-pick commits (applied on top of VLLM_COMMIT_SHA)
+# Logging fix from debug_fields_ignored branch
+ARG VLLM_CHERRYPICK_1="07e22e296e555d661b1f60a0a1a1187eeef25c25"
+ARG VLLM_CHERRYPICK_1_REMOTE="origin"
+# EPLB nvfp4 contiguous fix
+ARG VLLM_CHERRYPICK_2="00a944ef8e60bedc637c58e7dbed6849e6ad408e"
+ARG VLLM_CHERRYPICK_2_REMOTE="https://github.com/elvircrn/vllm.git"
 
 # ============================================================================
 # BUILD STAGE - Install build dependencies and create wheels
@@ -274,6 +283,7 @@ ARG NVSHMEM_VERSION
 ARG BUILD_NIXL_FROM_SOURCE
 ARG FLASHINFER_VERSION
 ARG TORCH_CUDA_ARCH_LIST
+ARG USE_SCCACHE
 
 # Build parallelism - reduce to avoid OOM on memory-constrained systems
 ARG MAX_JOBS=4
@@ -301,7 +311,7 @@ ${NVSHMEM_DIR}/lib:${NVSHMEM_DIR}/lib64:\
 /usr/lib/x86_64-linux-gnu:/usr/lib/aarch64-linux-gnu/:\
 ${LD_LIBRARY_PATH}" \
     PATH="${NVSHMEM_DIR}/bin:${UCX_PREFIX}/bin:${PATH}" \
-    CPATH="${NVSHMEM_DIR}/include:${CPATH}" \
+    CPATH="${NVSHMEM_DIR}/include:${CUDA_HOME}/include:${CUDA_HOME}/include/cccl:${CPATH}" \
     TORCH_CUDA_ARCH_LIST="${TORCH_CUDA_ARCH_LIST}" \
     FLASHINFER_VERSION=${FLASHINFER_VERSION} \
     CUDA_MAJOR=${CUDA_MAJOR} \
@@ -391,6 +401,10 @@ RUN export UV_INSTALL_DIR=/usr/local/bin && \
     ln -s /opt/vllm/bin/pip /usr/bin/pip && \
     uv pip install --no-cache -U wheel
 
+# Copy sccache from builder for vLLM source builds
+COPY --from=builder /usr/local/bin/sccache /usr/local/bin/sccache
+COPY --from=builder /usr/local/bin/setup-sccache /usr/local/bin/setup-sccache
+
 # Copy compiled wheels
 COPY --from=builder /wheels/*.whl /tmp/wheels/
 
@@ -409,6 +423,12 @@ RUN mkdir -p /opt/vllm-source && \
 # Define commit SHAs as build args to avoid layer invalidation
 ARG VLLM_REPO
 ARG VLLM_COMMIT_SHA
+
+# Cherry-pick args for python-only patches
+ARG VLLM_CHERRYPICK_1
+ARG VLLM_CHERRYPICK_1_REMOTE
+ARG VLLM_CHERRYPICK_2
+ARG VLLM_CHERRYPICK_2_REMOTE
 
 # vllm commit to use for precompiled wheel lookup (defaults to VLLM_COMMIT_SHA)
 # useful for testing feature branches with python-only changes against merge-base binaries
@@ -432,9 +452,12 @@ COPY scripts/warn-vllm-precompiled.sh /opt/
     # 2) install vllm from a wheel on the vllm wheels index - prod option, no flexbility
 COPY docker/scripts/cuda/runtime/install-vllm.sh /tmp/install-vllm.sh
 RUN --mount=type=cache,target=/var/cache/git \
-    chmod +x /tmp/install-vllm.sh && \
+    --mount=type=secret,id=aws_access_key_id \
+    --mount=type=secret,id=aws_secret_access_key \
+    bash -c "chmod +x /tmp/install-vllm.sh && \
+    USE_SCCACHE=${USE_SCCACHE} TARGETPLATFORM=${TARGETPLATFORM} source /usr/local/bin/setup-sccache && \
     /tmp/install-vllm.sh && \
-    rm /tmp/install-vllm.sh
+    rm /tmp/install-vllm.sh"
 
 # install OTEL packages to enable tracing
 COPY docker/packages/common/runtime-otel-package-requirements.txt /workspace/runtime-otel-package-requirements.txt

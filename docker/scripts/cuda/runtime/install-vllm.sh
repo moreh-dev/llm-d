@@ -37,6 +37,30 @@ git -C /opt/vllm-source config --system --add safe.directory /opt/vllm-source
 git -C /opt/vllm-source fetch --depth=1 origin "${VLLM_COMMIT_SHA}" || true
 git -C /opt/vllm-source checkout -q "${VLLM_COMMIT_SHA}"
 
+# Apply cherry-pick commits if specified (for python-only patches on top of main)
+apply_cherrypick() {
+  local commit="$1"
+  local remote="$2"
+  if [ -z "${commit}" ]; then
+    return
+  fi
+  echo "DEBUG: Cherry-picking commit ${commit} from ${remote}"
+  # Add remote if it's a URL (not "origin")
+  if [ "${remote}" != "origin" ] && [ -n "${remote}" ]; then
+    git -C /opt/vllm-source remote add cherrypick_remote "${remote}" 2>/dev/null || true
+    git -C /opt/vllm-source fetch --depth=50 cherrypick_remote
+    git -C /opt/vllm-source cherry-pick --no-commit "${commit}"
+    git -C /opt/vllm-source remote remove cherrypick_remote
+  else
+    git -C /opt/vllm-source fetch --depth=50 origin
+    git -C /opt/vllm-source cherry-pick --no-commit "${commit}"
+  fi
+  echo "DEBUG: Successfully applied ${commit}"
+}
+
+apply_cherrypick "${VLLM_CHERRYPICK_1:-}" "${VLLM_CHERRYPICK_1_REMOTE:-origin}"
+apply_cherrypick "${VLLM_CHERRYPICK_2:-}" "${VLLM_CHERRYPICK_2_REMOTE:-origin}"
+
 # resolve VLLM_PRECOMPILED_WHEEL_COMMIT to actual commit SHA (wheel index uses SHAs, not tag names)
 # fetch the ref if needed (in case it differs from VLLM_COMMIT_SHA)
 git -C /opt/vllm-source fetch --depth=1 origin "${VLLM_PRECOMPILED_WHEEL_COMMIT}" 2>/dev/null || true
