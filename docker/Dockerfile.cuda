@@ -54,11 +54,11 @@ ARG DEEPEP_VERSION="gb200_blog_part_2"
 ARG DEEPGEMM_REPO="https://github.com/deepseek-ai/DeepGEMM"
 ARG DEEPGEMM_VERSION="v2.1.0"
 ARG FLASHINFER_REPO="https://github.com/flashinfer-ai/flashinfer.git"
-ARG FLASHINFER_VERSION="v0.6.3"
+ARG FLASHINFER_VERSION="v0.6.4"
 
 # vLLM build settings
-ARG VLLM_REPO="https://github.com/vllm-project/vllm.git"
-ARG VLLM_COMMIT_SHA="main"
+ARG VLLM_REPO="https://github.com/tlrmchlsmth/vllm.git"
+ARG VLLM_COMMIT_SHA="fused_rope_quant_qwrite_merged_main"
 #ARG VLLM_PRECOMPILED_WHEEL_COMMIT="f0d525171557e3fe74e8e6df52257f9d66831d3f"
 ARG VLLM_PREBUILT=0
 # Build from source for CUDA 13.0 (precompiled wheels only exist for CUDA 12.x)
@@ -189,17 +189,8 @@ RUN --mount=type=cache,target=/var/cache/git \
     /tmp/build-ucx.sh && \
     rm -f /tmp/build-ucx.sh
 
-# Build NVSHMEM
-ARG NVSHMEM_USE_GIT
-ARG NVSHMEM_REPO
-ARG NVSHMEM_VERSION
-ENV NVSHMEM_CUDA_ARCHITECTURES="90a;100"
-COPY docker/scripts/cuda/builder/build-nvshmem.sh /tmp/build-nvshmem.sh
-RUN --mount=type=cache,target=/var/cache/git \
-    --mount=type=secret,id=aws_access_key_id \
-    --mount=type=secret,id=aws_secret_access_key \
-    /tmp/build-nvshmem.sh && \
-    rm -f /tmp/build-nvshmem.sh
+# NVSHMEM is installed via pip (nvidia-nvshmem-cu${CUDA_MAJOR}) in the runtime stage
+# No longer building from source
 
 
 # Pin torch, so all deps are built against the same version
@@ -371,8 +362,7 @@ RUN if [ -d /tmp/gdrcopy_libs ]; then \
         rm -rf /tmp/gdrcopy_libs; \
     fi
 
-# Copy compiled NVSHMEM libraries from builder
-COPY --from=builder /opt/nvshmem-${NVSHMEM_VERSION}/ /opt/nvshmem-${NVSHMEM_VERSION}/
+# NVSHMEM is installed via pip (nvidia-nvshmem-cu${CUDA_MAJOR}) - no need to copy from builder
 
 COPY --from=builder /opt/nixl /opt/nixl
 RUN if [ -d /opt/nixl/include ]; then \
