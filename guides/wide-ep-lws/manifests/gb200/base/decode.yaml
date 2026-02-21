@@ -76,8 +76,6 @@ spec:
                   --trust-remote-code \
                   --kv_transfer_config '{"kv_connector":"NixlConnector","kv_role":"kv_both"}'
             env:
-              - name: VLLM_DEEPEP_LOW_LATENCY_ALLOW_NVLINK
-                value: "1"
               - name: VLLM_DEEPEP_LOW_LATENCY_USE_MNNVL
                 value: "1"
               - name: VLLM_FUSED_MOE_CHUNK_SIZE
