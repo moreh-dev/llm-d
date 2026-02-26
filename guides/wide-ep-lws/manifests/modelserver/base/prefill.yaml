@@ -10,9 +10,9 @@ metadata:
     llm-d.ai/model: DeepSeek-R1-0528
     llm-d.ai/role: prefill
 spec:
-  replicas: 2
+  replicas: 1
   leaderWorkerTemplate:
-    size: 1
+    size: 2
     workerTemplate:
       metadata:
         labels:
@@ -83,15 +83,18 @@ spec:
                                           "kv_role":"kv_both",
                                           "kv_load_failure_policy":"fail"}' \
                   --async-scheduling \
-                  --gpu-memory-utilization 0.9 \
-                  --speculative-config '{"method": "deepseek_mtp", "num_speculative_tokens": 1}' \
-                  --attention-backend FLASHINFER_MLA
+                  --enable-dbo \
+                  --dbo-prefill-token-threshold 32 \
+                  --enable-eplb \
+                  --eplb-config '{"window_size":"1000",
+                                  "step_interval":"3000",
+                                  "num_redundant_experts":"32",
+                                  "log_balancedness":"False"}' \
+                  --gpu-memory-utilization 0.75
 
             env:
               - name: DP_SIZE_LOCAL
                 value: "8"
-              - name: NVSHMEM_HCA_LIST
-                value: "mlx5_0:1,mlx5_1:1,mlx5_2:1,mlx5_3:1,mlx5_4:1,mlx5_5:1,mlx5_6:1,mlx5_7:1,mlx5_8:1,mlx5_9:1,mlx5_10:1,mlx5_11:1"
               - name: TP_SIZE
                 value: "1"
               - name: TRITON_LIBCUDA_PATH
@@ -132,10 +135,9 @@ spec:
               # HuggingFace is likely to be quite a bit larger, give it its own cache
               - name: HF_HUB_CACHE
                 value: /var/cache/huggingface
+              # Temporarily set this to avoid issue with 0.5 image
               - name: NVSHMEM_DISABLE_CUDA_VMM
                 value: "0"
-              - name: UCX_NET_DEVICES
-                value: "mlx5_0:1,mlx5_1:1,mlx5_2:1,mlx5_3:1,mlx5_4:1,mlx5_5:1,mlx5_6:1,mlx5_7:1,mlx5_8:1,mlx5_9:1,mlx5_10:1,mlx5_11:1"
 
             ports:
               - containerPort: 8000
