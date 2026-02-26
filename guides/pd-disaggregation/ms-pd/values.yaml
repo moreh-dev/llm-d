@@ -65,21 +65,19 @@ decode:
           memory: 64Gi
           cpu: "16"
           # note: GPU resources get controlled by parallelism + accelerators above
-          # rdma/ib: 1
+          rdma/ib: 1
         requests:
           memory: 64Gi
           cpu: "16"
           # note: GPU resources get controlled by parallelism + accelerators above
-          # rdma/ib: 1
+          rdma/ib: 1
       volumeMounts:
         - name: metrics-volume
           mountPath: /.config
         - name: shm
           mountPath: /dev/shm
-        - name: vllm-cache
-          mountPath: /mnt/vllm-cache
-        - name: hf-cache
-          mountPath: /mnt/hf-cache
+        - name: torch-compile-cache
+          mountPath: /.cache
       startupProbe:
         httpGet:
           path: /v1/models
@@ -109,14 +107,8 @@ decode:
       emptyDir:
         medium: Memory
         sizeLimit: "16Gi"
-    - name: vllm-cache
-      hostPath:
-        path: /mnt/filesystem-x7/vllm-cache
-        type: DirectoryOrCreate
-    - name: hf-cache
-      hostPath:
-        path: /mnt/filesystem-x7/hf-cache
-        type: DirectoryOrCreate
+    - name: torch-compile-cache
+      emptyDir: {}
 
 prefill:
   parallelism:
@@ -164,21 +156,19 @@ prefill:
           memory: 64Gi
           cpu: "8"
           # note: GPU resources get controlled by parallelism + accelerators above
-          # rdma/ib: 1
+          rdma/ib: 1
         requests:
           memory: 64Gi
           cpu: "8"
           # note: GPU resources get controlled by parallelism + accelerators above
-          # rdma/ib: 1
+          rdma/ib: 1
       volumeMounts:
         - name: metrics-volume
           mountPath: /.config
         - name: shm
           mountPath: /dev/shm
-        - name: vllm-cache
-          mountPath: /mnt/vllm-cache
-        - name: hf-cache
-          mountPath: /mnt/hf-cache
+        - name: torch-compile-cache
+          mountPath: /.cache
       startupProbe:
         httpGet:
           path: /v1/models
