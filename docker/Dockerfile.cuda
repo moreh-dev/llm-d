@@ -58,10 +58,10 @@ ARG FLASHINFER_VERSION="v0.6.4"
 
 # vLLM build settings
 ARG VLLM_REPO="https://github.com/vllm-project/vllm.git"
-ARG VLLM_COMMIT_SHA="v0.16.0"
-ARG VLLM_PRECOMPILED_WHEEL_COMMIT="v0.16.0"
+ARG VLLM_COMMIT_SHA="ea5f903f80fec5afd4960a3846b8a84b0e53ca6e" # "v0.16.0"
+ARG VLLM_PRECOMPILED_WHEEL_COMMIT="ea5f903f80fec5afd4960a3846b8a84b0e53ca6e" # "v0.16.0"
 ARG VLLM_PREBUILT=0
-ARG VLLM_USE_PRECOMPILED=0
+ARG VLLM_USE_PRECOMPILED=1
 
 # ============================================================================
 # BUILD STAGE - Install build dependencies and create wheels
