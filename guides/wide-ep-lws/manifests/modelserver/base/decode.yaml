@@ -108,6 +108,7 @@ spec:
                                   "num_redundant_experts":"32",
                                   "log_balancedness":"False"}' \
                   --compilation_config '{"cudagraph_mode": "FULL_DECODE_ONLY"}' \
+                  --gpu-memory-utilization 0.8 \
                   --kv-cache-memory-bytes=${KV_CACHE_MEMORY_BYTES-}
             env:
               # VLLM_MOE_DP_CHUNK_SIZE is a tunable parameter.
@@ -156,14 +157,14 @@ spec:
 
               # Use cache directories from the mounted volume under one easy to mount
               # root directory.
-              - name: CUDA_CACHE_PATH
-                value: /var/cache/vllm/cuda
-              - name: CCACHE_DIR
-                value: /var/cache/vllm/ccache
-              - name: VLLM_CACHE_ROOT
-                value: /var/cache/vllm/vllm
-              - name: FLASHINFER_WORKSPACE_BASE
-                value: /var/cache/vllm/flashinfer
+              # - name: CUDA_CACHE_PATH
+              #   value: /var/cache/vllm/cuda
+              # - name: CCACHE_DIR
+              #   value: /var/cache/vllm/ccache
+              # - name: VLLM_CACHE_ROOT
+              #   value: /var/cache/vllm/vllm
+              # - name: FLASHINFER_WORKSPACE_BASE
+              #   value: /var/cache/vllm/flashinfer
               # HuggingFace is likely to be quite a bit larger, give it its own cache
               - name: HF_HUB_CACHE
                 value: /var/cache/huggingface

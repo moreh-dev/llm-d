@@ -10,9 +10,9 @@ metadata:
     llm-d.ai/model: DeepSeek-R1-0528
     llm-d.ai/role: prefill
 spec:
-  replicas: 1
+  replicas: 2
   leaderWorkerTemplate:
-    size: 2
+    size: 1
     workerTemplate:
       metadata:
         labels:
@@ -82,15 +82,7 @@ spec:
                   --kv_transfer_config '{"kv_connector":"NixlConnector",
                                           "kv_role":"kv_both",
                                           "kv_load_failure_policy":"fail"}' \
-                  --async-scheduling \
-                  --enable-dbo \
-                  --dbo-prefill-token-threshold 32 \
-                  --enable-eplb \
-                  --eplb-config '{"window_size":"1000",
-                                  "step_interval":"3000",
-                                  "num_redundant_experts":"32",
-                                  "log_balancedness":"False"}' \
-                  --gpu-memory-utilization 0.75
+                  --gpu-memory-utilization 0.8
 
             env:
               - name: DP_SIZE_LOCAL
@@ -128,14 +120,14 @@ spec:
 
               # Use cache directories from the mounted volume under one easy to mount
               # root directory.
-              - name: CUDA_CACHE_PATH
-                value: /var/cache/vllm/cuda
-              - name: CCACHE_DIR
-                value: /var/cache/vllm/ccache
-              - name: VLLM_CACHE_ROOT
-                value: /var/cache/vllm/vllm
-              - name: FLASHINFER_WORKSPACE_BASE
-                value: /var/cache/vllm/flashinfer
+              # - name: CUDA_CACHE_PATH
+              #   value: /var/cache/vllm/cuda
+              # - name: CCACHE_DIR
+              #   value: /var/cache/vllm/ccache
+              # - name: VLLM_CACHE_ROOT
+              #   value: /var/cache/vllm/vllm
+              # - name: FLASHINFER_WORKSPACE_BASE
+              #   value: /var/cache/vllm/flashinfer
               # HuggingFace is likely to be quite a bit larger, give it its own cache
               - name: HF_HUB_CACHE
                 value: /var/cache/huggingface
