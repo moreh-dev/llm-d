@@ -82,7 +82,6 @@ spec:
                 # --async-scheduling: Reduce white space between engine steps
                 # --enable-dbo:  Dual batch overlap (DBO) overlaps compute with collective communication.
 
-
                 exec vllm serve \
                   deepseek-ai/DeepSeek-R1-0528 \
                   --port 8200 \
@@ -169,8 +168,6 @@ spec:
                 value: /var/cache/huggingface
               - name: NVSHMEM_DISABLE_CUDA_VMM
                 value: "0"
-              - name: UCX_NET_DEVICES
-                value: "mlx5_0:1,mlx5_1:1,mlx5_2:1,mlx5_3:1,mlx5_4:1,mlx5_5:1,mlx5_6:1,mlx5_7:1,mlx5_8:1,mlx5_9:1,mlx5_10:1,mlx5_11:1"
 
             ports:
               - containerPort: 8200
