@@ -69,8 +69,6 @@ spec:
                 --trust-remote-code \
                 --tensor-parallel-size 8
           env:
-            - name: VLLM_SKIP_P2P_CHECK
-              value: "1"
             - name: VLLM_USE_FLASHINFER_MOE_FP8
               value: "1"
             - name: VLLM_FLASHINFER_MOE_BACKEND
@@ -123,3 +121,17 @@ spec:
               mountPath: /var/cache/huggingface
             - name: jit-cache
               mountPath: /var/cache/vllm
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: deepseek-r1-tp8-podmonitor
+spec:
+  selector:
+    matchLabels:
+      app: deepseek-r1-tp8
+  podMetricsEndpoints:
+    # For decode service, this is port 8200. Must use port name.
+    - port: "vllm"
+      path: /metrics
+      interval: 5s

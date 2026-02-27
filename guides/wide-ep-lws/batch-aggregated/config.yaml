@@ -1,0 +1,83 @@
+api:
+  type: completion
+  streaming: true
+  headers: null
+  slo_unit: null
+  slo_tpot_header: null
+  slo_ttft_header: null
+data:
+  type: random
+  path: null
+  input_distribution:
+    min: 2000
+    max: 2000
+    mean: 2000.0
+    std_dev: 0.0
+    total_count: 3601
+  output_distribution:
+    min: 2000
+    max: 2000
+    mean: 2000.0
+    std_dev: 0.0
+    total_count: 3601
+  shared_prefix: null
+  trace: null
+load:
+  type: constant
+  interval: 1.0
+  stages:
+  - rate: 30.0
+    duration: 120
+    num_requests: null
+    concurrency_level: null
+  sweep: null
+  num_workers: 160
+  worker_max_concurrency: 100
+  worker_max_tcp_connections: 2500
+  trace: null
+  circuit_breakers: []
+  request_timeout: 10000.0
+  lora_traffic_split: null
+  base_seed: 1772153338453
+metrics: null
+report:
+  request_lifecycle:
+    summary: true
+    per_stage: true
+    per_request: true
+    per_adapter: true
+    per_adapter_stage: false
+    percentiles:
+    - 0.1
+    - 1.0
+    - 5.0
+    - 10.0
+    - 25.0
+    - 50.0
+    - 75.0
+    - 90.0
+    - 95.0
+    - 99.0
+    - 99.9
+  prometheus:
+    summary: true
+    per_stage: false
+storage:
+  local_storage:
+    path: reports-20260227-004858
+    report_file_prefix: null
+  google_cloud_storage: null
+  simple_storage_service: null
+server:
+  type: vllm
+  model_name: deepseek-ai/DeepSeek-R1-0528
+  base_url: http://10.145.217.87:8000
+  ignore_eos: true
+  api_key: null
+  cert_path: null
+  key_path: null
+tokenizer:
+  pretrained_model_name_or_path: deepseek-ai/DeepSeek-R1-0528
+  trust_remote_code: null
+  token: null
+circuit_breakers: null

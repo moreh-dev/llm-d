@@ -6,9 +6,9 @@
 NAMESPACE="${NAMESPACE:-llm-d-nebius}"
 GATEWAY_NAME="${GATEWAY_NAME:-llm-d-inference-gateway}"
 BENCHMARK_DIR="${BENCHMARK_DIR:-./batch}"
-OUTPUT_DIR="${OUTPUT_DIR:-./batch-wide-ep}"
-# RAW_IP="${RAW_IP:-10.145.217.87}"
-# RAW_PORT="${RAW_PORT:-80}"
+OUTPUT_DIR="${OUTPUT_DIR:-./batch-aggregated}"
+RAW_IP="${RAW_IP:-10.145.217.87}"
+RAW_PORT="${RAW_PORT:-8000}"
 
 # Colors for output
 GREEN='\033[0;32m'
