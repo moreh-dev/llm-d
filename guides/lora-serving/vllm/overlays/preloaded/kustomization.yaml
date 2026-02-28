@@ -1,0 +1,38 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+patches:
+  - target:
+      kind: Deployment
+      name: llm-d-model-server
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 4
+  - target:
+      kind: Deployment
+      name: llm-d-model-server
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/args/0
+        value: |-
+          exec vllm serve \
+            meta-llama/Llama-3.1-8B-Instruct \
+            --port 8000 \
+            --enable-lora \
+            --lora-modules sql-lora=FinGPT/fingpt-forecaster_llama3-8b_lora sentiment-lora=FinGPT/fingpt-sentiment_llama3-8b_lora \
+            --max-loras 3 \
+            --max-lora-rank 64 \
+            --max-cpu-loras 5
+  - target:
+      kind: Deployment
+      name: llm-d-model-server
+    patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/resources
+        value:
+          limits:
+            nvidia.com/gpu: 1
+          requests:
+            nvidia.com/gpu: 1
