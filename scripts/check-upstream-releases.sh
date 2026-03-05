@@ -201,6 +201,33 @@ check_dependency() {
   local error=""
   local release_url=""
 
+  # Skip floating/unpinned/minimum-version dependencies — no drift to detect
+  case "$pin_type" in
+    "floating"*|"minimum version"|"minimum")
+      # These are intentionally unversioned or lower-bound only — skip
+      cat > "$result_file" <<SKIP
+{"name":"$(echo "$name" | sed 's/"/\\"/g')","upstream_repo":"${repo}","pin_type":"$(echo "$pin_type" | sed 's/"/\\"/g')","current_pin":"$(echo "$current_pin" | sed 's/"/\\"/g')","latest_version":"$(echo "$current_pin" | sed 's/"/\\"/g')","file_location":"$(echo "$file_loc" | sed 's/"/\\"/g')","release_url":"","changed":false,"error":"","skipped":true}
+SKIP
+      return
+      ;;
+  esac
+  # Skip well-known floating pin values
+  case "$current_pin" in
+    "auto"|"latest"|"stable"|"unpinned"|"main"|"master")
+      cat > "$result_file" <<SKIP
+{"name":"$(echo "$name" | sed 's/"/\\"/g')","upstream_repo":"${repo}","pin_type":"$(echo "$pin_type" | sed 's/"/\\"/g')","current_pin":"$(echo "$current_pin" | sed 's/"/\\"/g')","latest_version":"$(echo "$current_pin" | sed 's/"/\\"/g')","file_location":"$(echo "$file_loc" | sed 's/"/\\"/g')","release_url":"","changed":false,"error":"","skipped":true}
+SKIP
+      return
+      ;;
+  esac
+  # Skip pins that start with >= (minimum version specifiers)
+  if [[ "$current_pin" == ">="* ]] || [[ "$current_pin" == "~="* ]] || [[ "$current_pin" == "^"* ]]; then
+    cat > "$result_file" <<SKIP
+{"name":"$(echo "$name" | sed 's/"/\\"/g')","upstream_repo":"${repo}","pin_type":"$(echo "$pin_type" | sed 's/"/\\"/g')","current_pin":"$(echo "$current_pin" | sed 's/"/\\"/g')","latest_version":"$(echo "$current_pin" | sed 's/"/\\"/g')","file_location":"$(echo "$file_loc" | sed 's/"/\\"/g')","release_url":"","changed":false,"error":"","skipped":true}
+SKIP
+    return
+  fi
+
   case "$pin_type" in
     "commit SHA"|"commit")
       # Check how far behind the pinned SHA is
@@ -356,9 +383,10 @@ EOF
   local all_results
   all_results=$(jq -s '.' "${RESULTS_DIR}"/*.json 2>/dev/null || echo "[]")
 
-  local changed_count error_count
+  local changed_count error_count skipped_count
   changed_count=$(echo "$all_results" | jq '[.[] | select(.changed == true)] | length')
-  error_count=$(echo "$all_results" | jq '[.[] | select(.error != "")] | length')
+  error_count=$(echo "$all_results" | jq '[.[] | select(.error != "" and .error != null)] | length')
+  skipped_count=$(echo "$all_results" | jq '[.[] | select(.skipped == true)] | length')
 
   # Write final output — valid JSON guaranteed by jq
   local timestamp
@@ -367,13 +395,14 @@ EOF
     check_timestamp: $ts,
     total_deps: $total,
     changed_count: ([.[] | select(.changed == true)] | length),
-    unchanged_count: ($total - ([.[] | select(.changed == true)] | length) - ([.[] | select(.error != "")] | length)),
-    error_count: ([.[] | select(.error != "")] | length),
+    unchanged_count: ($total - ([.[] | select(.changed == true)] | length) - ([.[] | select(.error != "" and .error != null)] | length) - ([.[] | select(.skipped == true)] | length)),
+    skipped_count: ([.[] | select(.skipped == true)] | length),
+    error_count: ([.[] | select(.error != "" and .error != null)] | length),
     changes: [.[] | select(.changed == true)],
-    errors: [.[] | select(.error != "") | .error]
+    errors: [.[] | select(.error != "" and .error != null) | .error]
   }' > "$OUTPUT_FILE"
 
-  log "Results: ${changed_count} changed, $((dep_count - changed_count - error_count)) unchanged, ${error_count} errors"
+  log "Results: ${changed_count} changed, $((dep_count - changed_count - error_count - skipped_count)) unchanged, ${skipped_count} skipped, ${error_count} errors"
   log "Output written to ${OUTPUT_FILE}"
 
   # Cleanup
