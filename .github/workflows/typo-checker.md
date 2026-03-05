@@ -47,7 +47,7 @@ Filter to relevant file types (skip binary files, lock files, generated files):
 - Include: `*.md`, `*.yml`, `*.yaml`, `*.go`, `*.py`, `*.sh`, `*.txt`, `*.json`, `*.toml`
 - Exclude: `*.lock.yml`, `*.lock`, `*_generated*`, `vendor/`, `node_modules/`, `*.pb.go`
 
-If no relevant files changed, exit cleanly.
+If no relevant files changed, exit immediately — do not post any comment.
 
 #### Step 2: Get Changed Content
 
@@ -90,6 +90,7 @@ The following are NOT typos — do not flag them:
 - OCI, GHCR, ghcr
 - Gaudi, HPU, XPU, TPU, ROCm
 - InfiniStore, infinistore
+- pplx, perplexity
 - kubectl, kubeconfig, kubecontext
 - ConfigMap, ServiceAccount, ClusterRole, RoleBinding
 - HTTPRoute, GRPCRoute, Gateway API
@@ -124,7 +125,7 @@ This checker recognizes llm-d domain terminology. If a valid term was incorrectl
 </details>
 ```
 
-If no typos are found, do not post a comment.
+If no typos are found, exit immediately — do not post any comment. The CI status communicates success.
 
 ### Important Rules
 
