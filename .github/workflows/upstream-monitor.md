@@ -59,7 +59,7 @@ You MUST follow these rules to minimize token usage:
 Run the deterministic pre-check script that checks all tracked dependencies for new releases:
 
 ```bash
-bash scripts/check-upstream-releases.sh || true
+curl -sfL https://raw.githubusercontent.com/llm-d/llm-d-infra/main/scripts/check-upstream-releases.sh | bash || true
 ```
 
 Then read the results:
