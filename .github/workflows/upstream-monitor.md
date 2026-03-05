@@ -56,7 +56,12 @@ You MUST follow these rules to minimize token usage:
 
 ### Step 1: Run Pre-Check Script (MANDATORY FIRST STEP)
 
-Run the deterministic pre-check script that checks all tracked dependencies for new releases:
+Run the deterministic pre-check script that checks all tracked dependencies for new releases.
+
+> **Note**: The script is sourced from the org-owned `llm-d/llm-d-infra` repo's `main` branch.
+> Branch protection and required reviews guard against unauthorized changes.
+> Pinning to a commit SHA is impractical here because the script is updated in the same repo
+> and would require coordinated SHA updates across all consuming repos on every change.
 
 ```bash
 curl -sfL https://raw.githubusercontent.com/llm-d/llm-d-infra/main/scripts/check-upstream-releases.sh | bash || true
@@ -79,7 +84,7 @@ cat /tmp/upstream-check-results.json
 Before creating any issues, check if they already exist for the changed dependencies:
 
 ```bash
-gh issue list --label upstream-breaking-change --label upstream-update --state open --json title,number --jq '.[].title'
+gh issue list --state open --search 'label:"upstream-breaking-change" OR label:"upstream-update"' --json title,number --jq '.[].title'
 ```
 
 If an open issue already covers a dependency's version bump (same dependency name and target version in the title), skip that dependency entirely.
