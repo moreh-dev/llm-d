@@ -4,6 +4,7 @@ resources:
   - ./gateway
   # - ./vllm/overlays/preloaded
   - ./vllm/overlays/runtime-loaded
+  # - ./vllm/overlays/runtime-loaded-from-pv
 
 helmCharts:
   - name: inferencepool

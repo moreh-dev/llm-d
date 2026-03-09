@@ -1,0 +1,73 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+  - pvc.yaml
+
+patches:
+  # Set replicas to 4
+  - target:
+      kind: Deployment
+      name: llm-d-model-server
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 4
+  
+  # Configure vLLM with runtime LoRA loading
+  - target:
+      kind: Deployment
+      name: llm-d-model-server
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/args/0
+        value: |-
+          exec vllm serve \
+            meta-llama/Llama-3.1-8B-Instruct \
+            --port 8000 \
+            --enable-lora \
+            --max-loras 3 \
+            --max-lora-rank 64 \
+            --max-cpu-loras 5
+  
+  # Enable runtime LoRA updating
+  - target:
+      kind: Deployment
+      name: llm-d-model-server
+    patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/env/-
+        value:
+          name: VLLM_ALLOW_RUNTIME_LORA_UPDATING
+          value: "True"
+      - op: add
+        path: /spec/template/spec/containers/0/env/-
+        value:
+          name: VLLM_LORA_RESOLVER_CACHE_DIR
+          value: "/lora-adapters"
+
+  # Set LoRA cache directory
+  
+  # Add persistent volume to volumes array
+  - target:
+      kind: Deployment
+      name: llm-d-model-server
+    patch: |-
+      - op: add
+        path: /spec/template/spec/volumes/-
+        value:
+          name: lora-adapters
+          persistentVolumeClaim:
+            claimName: lora-adapters-pvc
+  
+  # Add volume mount to container
+  - target:
+      kind: Deployment
+      name: llm-d-model-server
+    patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/volumeMounts/-
+        value:
+          name: lora-adapters
+          mountPath: /lora-adapters
+
