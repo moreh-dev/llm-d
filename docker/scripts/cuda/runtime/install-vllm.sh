@@ -19,7 +19,7 @@ set -Eeu
 
 # Using forked vLLM
 VLLM_REPO="https://github.com/jtechapps/vllm-1.git"
-VLLM_COMMIT_SHA="f2cc2ca41ea5d8fcba53f5dfd047e6b47dd520f8"
+VLLM_COMMIT_SHA="005b10ec3ab2575b38979d19b9c132cb339c1de1"
 VLLM_PRECOMPILED_WHEEL_COMMIT="c487a8eef4d89d858c68f4262da14b1940abf950"
 
 # default VLLM_PRECOMPILED_WHEEL_COMMIT to VLLM_COMMIT_SHA if not set
