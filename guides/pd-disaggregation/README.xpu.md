@@ -47,7 +47,7 @@ make image-build DEVICE=xpu VERSION=v0.5.1
 # Build directly from the upstream vLLM Dockerfile.xpu
 git clone https://github.com/vllm-project/vllm.git
 cd vllm
-git checkout 0.17.0
+git checkout v0.15.1
 docker build -f docker/Dockerfile.xpu -t ghcr.io/llm-d/llm-d-xpu-dev:v0.5.1 --shm-size=4g .
 ```
 

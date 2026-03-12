@@ -6,7 +6,8 @@ include docker/vllm-version
 PROJECT_NAME ?= llm-d
 DOCKERFILE_DIR = docker
 XPU_BUILD_DIR ?= .cache/vllm-src
-XPU_DOCKERFILE_URL ?= https://raw.githubusercontent.com/vllm-project/vllm/main/docker/Dockerfile.xpu
+XPU_VLLM_TAG ?= v0.17.0
+XPU_DOCKERFILE_URL ?= https://raw.githubusercontent.com/vllm-project/vllm/$(XPU_VLLM_TAG)/docker/Dockerfile.xpu
 
 ifeq ($(DEVICE), xpu)
 	DOCKERFILE_DIR = $(XPU_BUILD_DIR)
