@@ -8,18 +8,21 @@ inferenceExtension:
   image:
     name: llm-d-inference-scheduler
     hub: ghcr.io/llm-d
-    tag: v0.4.0
+    tag: v0.6.0
   extProcPort: 9002
+  # Distributed tracing configuration (OpenTelemetry)
+  tracing:
+    enabled: false
+    # otelExporterEndpoint: "http://otel-collector:4317"
+    # sampling:
+    #   sampler: "parentbased_traceidratio"
+    #   samplerArg: "0.1"
   monitoring:
     interval: "10s"
-    # Service account token secret for authentication
-    secret:
-      name: wide-ep-gateway-sa-metrics-reader-secret
-    # Prometheus ServiceMonitor will be created when enabled for EPP metrics collection
     prometheus:
-      enabled: false
-    gke:
-      enable: false
+      enabled: true
+      auth:
+        secretName: "wide-ep-gateway-sa-metrics-reader-secret"
   pluginsConfigFile: "custom-plugins.yaml"
   pluginsCustomConfig:
     custom-plugins.yaml: |
@@ -52,7 +55,8 @@ inferenceExtension:
 inferencePool:
   modelServers:
     matchLabels:
-      llm-d.ai/inferenceServing: "true"
+      llm-d.ai/inference-serving: "true"
+      llm-d.ai/guide: "wide-ep-lws"
       llm-d.ai/model: DeepSeek-R1-0528
 
 provider:

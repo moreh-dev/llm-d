@@ -17,9 +17,11 @@ environments:
     values:
       - provider:
           name: none
+  amd: &AMD
+    <<: *I
   xpu: &XPU
     <<: *I
-  gaudi: &GAUDI
+  hpu: &HPU
     <<: *I
   cpu: &CPU
     <<: *I
@@ -57,17 +59,19 @@ releases:
   - name: {{ printf "gaie-%s" $rn | quote }}
     namespace: {{ $ns }}
     chart: oci://registry.k8s.io/gateway-api-inference-extension/charts/inferencepool
-    version: v1.3.0
+    version: v1.3.1
     installed: true
     needs:
       {{- if ne .Environment.Name "standalone" }}
       - {{ printf "infra-%s" $rn | quote }}
       {{- end }}
     values:
-      {{- if ne .Environment.Name "standalone" }}
-      - gaie-inference-scheduling/values.yaml
-      {{- else }}
+      {{- if eq .Environment.Name "standalone" }}
       - standalone-inference-scheduling/values.yaml
+      {{- else if eq (env "INFERENCE_SERVER") "sglang" }}
+      - gaie-inference-scheduling/values_sglang.yaml
+      {{- else }}
+      - gaie-inference-scheduling/values.yaml
       {{- end }}
     # Apply provider name if on GKE
     {{- if or (eq .Environment.Name "gke") (eq .Environment.Name "gke_tpu") }}
@@ -75,13 +79,11 @@ releases:
           name: {{ .Environment.Values.provider.name }}
         inferenceExtension:
           monitoring:
-            gke:
-              enabled: true
             prometheus:
-              enabled: false
+              enabled: true
     {{- end }}
     # Apply destination rule for anything istio
-    {{- if or (eq .Environment.Name "istio") (eq .Environment.Name "default") (eq .Environment.Name "xpu") (eq .Environment.Name "gaudi") (eq .Environment.Name "cpu") }}
+    {{- if or (eq .Environment.Name "istio") (eq .Environment.Name "default") (eq .Environment.Name "amd") (eq .Environment.Name "xpu") (eq .Environment.Name "hpu") (eq .Environment.Name "cpu") }}
       - provider:
           name: {{ .Environment.Values.provider.name }}
           istio:
@@ -97,7 +99,7 @@ releases:
   - name: {{ printf "ms-%s" $rn | quote }}
     namespace: {{ $ns }}
     chart: llm-d-modelservice/llm-d-modelservice
-    version: v0.3.17
+    version: v0.4.7
     installed: true
     needs:
       {{- if ne .Environment.Name "standalone" }}
@@ -107,19 +109,23 @@ releases:
     values:
     {{- if eq .Environment.Name "gke_tpu" }}
       - ms-inference-scheduling/values_tpu.yaml
+    {{- else if eq .Environment.Name "amd" }}
+      - ms-inference-scheduling/values_amd.yaml
     {{- else if eq .Environment.Name "xpu" }}
       - ms-inference-scheduling/values_xpu.yaml
-    {{- else if eq .Environment.Name "gaudi" }}
-      - ms-inference-scheduling/values-gaudi.yaml
+    {{- else if eq .Environment.Name "hpu" }}
+      - ms-inference-scheduling/values-hpu.yaml
     {{- else if eq .Environment.Name "cpu" }}
       - ms-inference-scheduling/values_cpu.yaml
     {{- else if eq .Environment.Name "digitalocean" }}
       - ms-inference-scheduling/digitalocean-values.yaml
+    {{- else if eq (env "INFERENCE_SERVER") "sglang" }}
+      - ms-inference-scheduling/values_sglang.yaml
     {{- else }}
       - ms-inference-scheduling/values.yaml
     {{- end }}
     set:
-    {{- if or (eq .Environment.Name "gke") (eq .Environment.Name "gke_tpu") }}  
+    {{- if or (eq .Environment.Name "gke") (eq .Environment.Name "gke_tpu") }}
       - name: "decode.monitoring.podmonitor.enabled"
         value: false
     {{- end }}

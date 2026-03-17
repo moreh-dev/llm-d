@@ -4,8 +4,8 @@ on:
   # Runs with a PR comment /run-gke-wide-ep
   issue_comment:
     types: [created]
-  schedule:  # TODO: enable once validated functional
-    - cron: '0 12 * * *'  # 5AM PST (11:00 UTC)
+  schedule:
+    - cron: '0 12 * * *'  # 5AM PST (12:00 UTC)
   workflow_dispatch:
     inputs:
       pr_or_branch:
@@ -20,7 +20,8 @@ permissions:
 jobs:
   deploy_and_validate:
     if: >
-      github.event_name == 'schedule' ||
+      github.repository == 'llm-d/llm-d' &&
+      (github.event_name == 'schedule' ||
       github.event_name == 'pull_request' ||
       github.event_name == 'workflow_dispatch' ||
       (
@@ -34,7 +35,7 @@ jobs:
           github.event.comment.author_association == 'MEMBER' ||
           github.event.comment.author_association == 'COLLABORATOR'
         )
-      )
+      ))
     runs-on: ubuntu-latest
 
     env:
@@ -50,7 +51,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           persist-credentials: false
 
@@ -128,7 +129,7 @@ jobs:
           --namespace ${NAMESPACE} \
           --set "provider.name=gke" \
           --set "inferencePool.apiVersion=inference.networking.k8s.io/v1" \
-          --set "inferenceExtension.monitoring.gke.enable=true" \
+          --set "inferenceExtension.monitoring.prometheus.enabled=true" \
           -f inferencepool.values.yaml \
           oci://registry.k8s.io/gateway-api-inference-extension/charts/inferencepool \
           --version ${INFERENCEPOOLVERSION}
@@ -231,7 +232,7 @@ jobs:
             mv ~/install-deps.log . || true
 
       - name: Upload pod logs as artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         if: always()
         with:
           name: llmd-pod-logs-wide-ep

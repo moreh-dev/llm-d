@@ -1,5 +1,5 @@
 #!/bin/bash
-set -Eeu
+set -Eeux
 
 # builds and installs LMCache and Infinistore from source
 #
@@ -16,26 +16,63 @@ set -Eeu
 
 cd /tmp
 
+# LMCache links against the CUDA *driver* API (libcuda).
+# During container builds there is no real NVIDIA driver present,
+# so libcuda.so is not available from the host.
+#
+# CUDA provides "stub" libraries for this exact case:
+# they allow code to *link* against libcuda at build time,
+# while deferring the real driver resolution to runtime.
+#
+# IMPORTANT:
+# - We add CUDA stubs ONLY to LIBRARY_PATH (link-time).
+# - We intentionally do NOT add them to LD_LIBRARY_PATH,
+#   because that would cause the runtime to load stub/compat
+#   libcuda instead of the host driver, leading to CUDA
+#   initialization failures (e.g. cudaGetDeviceCount error 803).
+#
+# This must remain scoped to the LMCache build step only.
+export LIBRARY_PATH="${CUDA_HOME}/lib64/stubs:${LIBRARY_PATH:-}"
+
 . /usr/local/bin/setup-sccache
 . "${VIRTUAL_ENV}/bin/activate"
 
 # PyTorch cpp_extension doesn't recognize "10.0f" syntax, normalize to standard format
 export TORCH_CUDA_ARCH_LIST="${TORCH_CUDA_ARCH_LIST//10.0f/10.0}"
 
-# Note: We intentionally do NOT set CC="sccache gcc" here because
-# torch's cpp_extension passes CC/CXX to nvcc -ccbin which doesn't
-# understand space-separated wrapper commands like "sccache gcc".
-# sccache for these builds would require NVCC_CCBIN_FLAGS or similar.
+if [ "${USE_SCCACHE}" = "true" ]; then
+    # Keep CC/CXX pointing at real compilers so torch doesn't think
+    # "sccache" itself is the compiler (logging/ABI warning issue)
+    export CC="gcc" CXX="g++" NVCC="nvcc"
 
+    # Wrap gcc/g++ with sccache via PATH so caching still works
+    WRAPDIR=/tmp/sccache-wrappers
+    mkdir -p "$WRAPDIR"
+
+    ln -sf "$(command -v sccache)" "$WRAPDIR/gcc"
+    ln -sf "$(command -v sccache)" "$WRAPDIR/g++"
+
+    # Ensure wrappers are picked up before system compilers
+    export PATH="$WRAPDIR:$PATH"
+fi
 git clone "${INFINISTORE_REPO}" infinistore && cd infinistore
+# pull tags for correct versioning on the wheel
+git fetch --tags --force
 git checkout -q "${INFINISTORE_VERSION}"
 uv build --wheel --no-build-isolation --out-dir /wheels
 cd ..
 rm -rf infinistore
 
 git clone "${LMCACHE_REPO}" lmcache && cd lmcache
+# pull tags for correct versioning on the wheel
+git fetch --tags --force
 git checkout -q "${LMCACHE_VERSION}"
-uv build --wheel --no-build-isolation --out-dir /wheels  && \
+
+# Prevent torch from whining when using sccache and misdetecting the compiler
+# (logging-only issue, does not affect the actual build)
+unset NINJA_STATUS
+unset TORCH_LOGS
+uv build -v --wheel --no-build-isolation --out-dir /wheels
 cd ..
 rm -rf lmcache
 

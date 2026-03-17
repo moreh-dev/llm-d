@@ -20,7 +20,7 @@ This document provides complete steps for deploying Intel XPU PD (Prefill-Decode
 
 * Create a namespace for installation.
 
-  ```
+  ```bash
   export NAMESPACE=llm-d-pd # or any other namespace (shorter names recommended)
   kubectl create namespace ${NAMESPACE}
   ```
@@ -38,7 +38,7 @@ If you need to customize the vLLM version or build the image from source, you ca
 
 ```shell
 # Build with default vLLM version (v0.11.0)
-make image-build DEVICE=xpu VERSION=v0.4.0
+make image-build DEVICE=xpu VERSION=v0.5.1
 ```
 
 #### Intel Corporation Battlemage G21
@@ -47,7 +47,7 @@ make image-build DEVICE=xpu VERSION=v0.4.0
 # Build with default vLLM version (v0.11.0)
 git clone https://github.com/vllm-project/vllm.git
 git checkout v0.11.0
-docker build -f docker/Dockerfile.xpu -t ghcr.io/llm-d/llm-d-xpu-dev:v0.4.0 --shm-size=4g .
+docker build -f docker/Dockerfile.xpu -t ghcr.io/llm-d/llm-d-xpu-dev:v0.5.1 --shm-size=4g .
 ```
 
 ### Available Build Arguments
@@ -106,7 +106,7 @@ If you built the Intel XPU image in Step 0, load it into the Kind cluster:
 
 ```shell
 # Load the built image into Kind cluster
-kind load docker-image ghcr.io/llm-d/llm-d-xpu:v0.4.0 --name llm-d-cluster
+kind load docker-image ghcr.io/llm-d/llm-d-xpu:v0.5.1 --name llm-d-cluster
 
 # Or if you built with custom tag
 kind load docker-image llm-d:custom-xpu --name llm-d-cluster
@@ -140,39 +140,16 @@ helmfile apply -f istio.helmfile.yaml --selector kind=gateway-control-plane
 
 ## Step 5: Deploy Intel XPU PD Disaggregation
 
-⚠️ **Important - For Intel BMG GPU Users**: Before running `helmfile apply`, you must update the GPU resource type in `ms-pd/values_xpu.yaml`:
+The Intel XPU configuration in `ms-pd/values_xpu.yaml` uses a unified accelerator type that works with all Intel GPU drivers:
 
 ```yaml
-# Edit ms-pd/values_xpu.yaml
+# Unified configuration for all Intel GPUs
 accelerator:
   type: intel
-  resources:
-    intel: "gpu.intel.com/xe"  # Add gpu.intel.com/xe
-
-# Also update decode and prefill resource specifications:
-decode:
-  containers:
-  - name: "vllm"
-    resources:
-      limits:
-        gpu.intel.com/xe: 1  # Change from gpu.intel.com/i915 to gpu.intel.com/xe
-      requests:
-        gpu.intel.com/xe: 1  # Change from gpu.intel.com/i915 to gpu.intel.com/xe
-
-prefill:
-  containers:
-  - name: "vllm"
-    resources:
-      limits:
-        gpu.intel.com/xe: 1  # Change from gpu.intel.com/i915 to gpu.intel.com/xe
-      requests:
-        gpu.intel.com/xe: 1  # Change from gpu.intel.com/i915 to gpu.intel.com/xe
+  dra: true
 ```
 
-**Resource Requirements by GPU Type:**
-
-* **Intel Data Center GPU Max 1550**: Use `gpu.intel.com/i915`
-* **Intel BMG GPU (Battlemage G21)**: Use `gpu.intel.com/xe`
+**Note:** The unified `intel` type works with both Intel Data Center GPU Max 1550 (i915 driver) and Intel BMG GPUs (Battlemage G21, xe driver). Dynamic Resource Allocation (DRA) automatically handles driver selection.
 
 ```shell
 # Navigate to PD disaggregation guide directory
@@ -204,11 +181,11 @@ helm list -n llm-d-pd
 
 Expected output:
 
-```
+```text
 NAME       NAMESPACE   REVISION   STATUS     CHART
-gaie-pd    llm-d-pd    1          deployed   inferencepool-v0.5.1
-infra-pd   llm-d-pd    1          deployed   llm-d-infra-v1.3.0
-ms-pd      llm-d-pd    1          deployed   llm-d-modelservice-v0.2.11
+gaie-pd    llm-d-pd    1          deployed   inferencepool-v1.3.1
+infra-pd   llm-d-pd    1          deployed   llm-d-infra-v1.3.6
+ms-pd      llm-d-pd    1          deployed   llm-d-modelservice-v0.4.7
 ```
 
 ### Check All Resources
@@ -280,6 +257,22 @@ Note
 ### Manual HTTPRoute Creation (If Not Auto-Created)
 
 If no HTTPRoute was found, create one manually:
+
+**_IMPORTANT:_** If you used a custom `$RELEASE_NAME_POSTFIX` environment variable during deployment, you **must** update the HTTPRoute file to match your custom release names before applying it. The HTTPRoute references the Gateway and InferencePool names which include the release name postfix.
+
+For example, if you set `RELEASE_NAME_POSTFIX=pd-xpu`, you need to update the HTTPRoute:
+
+```shell
+# Update the HTTPRoute to match your release names
+sed -e "s/infra-pd-inference-gateway/infra-pd-xpu-inference-gateway/g" \
+    -e "s/gaie-pd/gaie-pd-xpu/g" \
+    httproute.yaml > httproute-custom.yaml
+
+# Then apply the customized HTTPRoute
+kubectl apply -f httproute-custom.yaml -n llm-d-pd
+```
+
+If using default release names (no custom `RELEASE_NAME_POSTFIX`), simply apply:
 
 ```shell
 # Apply the HTTPRoute configuration from the PD disaggregation guide

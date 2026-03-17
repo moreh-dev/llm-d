@@ -9,31 +9,39 @@ inferenceExtension:
     ###################
     name: llm-d-inference-scheduler
     hub: ghcr.io/llm-d
-    tag: v0.4.0
+    tag: v0.6.0
     ###################
     # name: epp
     # hub: registry.k8s.io/gateway-api-inference-extension
-    # tag: v1.2.0
+    # tag: v1.3.1
     ###################
     pullPolicy: Always
   extProcPort: 9002
-  pluginsConfigFile: "default-plugins.yaml" # using upstream GIE default-plugins, see: https://github.com/kubernetes-sigs/gateway-api-inference-extension/blob/main/config/charts/inferencepool/templates/epp-config.yaml#L7C3-L56C33
+  pluginsConfigFile: "default-plugins.yaml"  # using upstream GIE default-plugins, see: https://github.com/kubernetes-sigs/gateway-api-inference-extension/blob/main/config/charts/inferencepool/templates/epp-config.yaml#L7C3-L56C33
 
+  # Distributed tracing configuration (OpenTelemetry)
+  tracing:
+    enabled: false
+    # otelExporterEndpoint: "http://otel-collector:4317"
+    # sampling:
+    #   sampler: "parentbased_traceidratio"
+    #   samplerArg: "0.1"
   # Monitoring configuration for EPP
   monitoring:
     interval: "10s"
-    # Prometheus ServiceMonitor will be created when enabled for EPP metrics collection
-    secret:
-      name: sim-gateway-sa-metrics-reader-secret
     prometheus:
       enabled: true
       auth:
-        # To allow unauthenticated /metrics access (e.g., for debugging with curl), set to false
         enabled: true
+        secretName: sim-gateway-sa-metrics-reader-secret
 inferencePool:
   targetPorts:
     - number: 8000
   modelServerType: vllm
   modelServers:
     matchLabels:
-      llm-d.ai/inferenceServing: "true"
+      llm-d.ai/inference-serving: "true"
+      llm-d.ai/guide: "simulated-accelerators"
+      # optional additional guide-specific labels - no overlays so we can be specific here
+      llm-d.ai/accelerator-variant: "cpu"
+      llm-d.ai/model: "random"

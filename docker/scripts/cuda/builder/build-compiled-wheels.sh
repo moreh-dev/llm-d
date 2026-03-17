@@ -1,5 +1,5 @@
 #!/bin/bash
-set -Eeu
+set -Eeux
 
 # builds compiled extension wheels (FlashInfer, DeepEP, DeepGEMM)
 #
@@ -25,14 +25,14 @@ cd /tmp
 . "${VIRTUAL_ENV}/bin/activate"
 . /usr/local/bin/setup-sccache
 
-# install build tools (cmake from pip provides 3.22+ needed by pplx-kernels)
+# install build tools
 uv pip install build cuda-python numpy setuptools-scm ninja cmake requests filelock tqdm
 
 # Add CUDA stubs to library path for build-time linking (libcuda.so is not available in containers)
 export LIBRARY_PATH="${CUDA_HOME}/lib64/stubs:${LIBRARY_PATH:-}"
 # TODO: Consider using TORCH_CUDA_ARCH_LIST from Dockerfile ENV instead of hardcoding
 # overwrite the TORCH_CUDA_ARCH_LIST for MoE kernels
-export TORCH_CUDA_ARCH_LIST="9.0a;10.0+PTX" 
+export TORCH_CUDA_ARCH_LIST="9.0a;10.0+PTX"
 
 # build FlashInfer wheel
 uv pip uninstall flashinfer-python || true
@@ -52,10 +52,20 @@ unset NVSHMEM_DIR
 
 git clone "${DEEPEP_REPO}" deepep
 cd deepep
+git fetch origin "${DEEPEP_VERSION}" # Workaround for claytons floating commit
 git checkout -q "${DEEPEP_VERSION}"
+# Force NVSHMEM IBGDA constant to be extern in host-compiled TUs (prevents duplicate definition)
+BACKUP_CXXFLAGS="${CXXFLAGS-}"
+export CXXFLAGS="${CXXFLAGS:-} -D__NVSHMEM_NUMBA_SUPPORT__"
 uv build --wheel --no-build-isolation --out-dir /wheels
 cd ..
 rm -rf deepep
+# restore CXXFLAGS exactly as it was (unset vs set)
+if [ -n "${BACKUP_CXXFLAGS+x}" ]; then
+  export CXXFLAGS="${BACKUP_CXXFLAGS}"
+else
+  unset CXXFLAGS
+fi
 
 # build DeepGEMM wheel
 git clone "${DEEPGEMM_REPO}" deepgemm

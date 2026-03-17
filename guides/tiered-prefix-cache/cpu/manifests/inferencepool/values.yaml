@@ -1,17 +1,23 @@
 inferencePool:
   modelServers:
     matchLabels:
-      "llm-d.ai/inferenceServing": "true"
+      "llm-d.ai/inference-serving": "true"
+      # no guide label because it uses the generic recipe base
 inferenceExtension:
   flags:
     # in vLLM 10.0+, the metric is renamed while upstream GAIE is still using the old name as default.
     # See https://github.com/kubernetes-sigs/gateway-api-inference-extension/pull/1905.
     kv-cache-usage-percentage-metric: "vllm:kv_cache_usage_perc"
+  # Distributed tracing configuration (OpenTelemetry)
+  tracing:
+    enabled: false
+    # otelExporterEndpoint: "http://otel-collector:4317"
+    # sampling:
+    #   sampler: "parentbased_traceidratio"
+    #   samplerArg: "0.1"
   monitoring:
-    gke:
-      enable: false
     prometheus:
-      enable: false
+      enable: true
   pluginsConfigFile: "custom-plugins.yaml"
   pluginsCustomConfig:
     custom-plugins.yaml: |
@@ -31,10 +37,10 @@ inferenceExtension:
       - name: default
         plugins:
         - pluginRef: queue-scorer
-          weight: 2
+          weight: 2.0
         - pluginRef: kv-cache-utilization-scorer
-          weight: 2
+          weight: 2.0
         - pluginRef: gpu-prefix-cache-scorer
-          weight: 1
+          weight: 1.0
         - pluginRef: cpu-prefix-cache-scorer
-          weight: 1
+          weight: 1.0

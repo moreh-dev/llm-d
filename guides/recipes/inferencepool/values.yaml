@@ -1,14 +1,20 @@
 inferencePool:
   modelServers:
     matchLabels:
-      "llm-d.ai/inferenceServing": "true"
+      llm-d.ai/inference-serving: "true"
+      # optional additional label for specific guide, ex: `llm-d.ai/guide: "inference-scheduling"
 inferenceExtension:
   flags:
     # in vLLM 10.0+, the metric is renamed while upstream GAIE is still using the old name as default.
     # See https://github.com/kubernetes-sigs/gateway-api-inference-extension/pull/1905.
     kv-cache-usage-percentage-metric: "vllm:kv_cache_usage_perc"
+  # Distributed tracing configuration (OpenTelemetry)
+  tracing:
+    enabled: false
+    # otelExporterEndpoint: "http://otel-collector:4317"
+    # sampling:
+    #   sampler: "parentbased_traceidratio"
+    #   samplerArg: "0.1"
   monitoring:
-    gke:
-      enable: false
     prometheus:
-      enable: false
+      enable: true

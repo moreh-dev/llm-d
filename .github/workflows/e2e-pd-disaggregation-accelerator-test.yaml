@@ -1,6 +1,8 @@
 name: E2E PD-Disaggregation Test
 
 on:
+  schedule:
+    - cron: '30 6 * * *'  # 6:30 AM UTC daily
   workflow_dispatch:
     inputs:
       pr_or_branch:
@@ -29,7 +31,9 @@ permissions:
 jobs:
   setup:
     if: >
-      github.event_name == 'workflow_dispatch'
+      github.repository == 'llm-d/llm-d' &&
+      (github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'schedule')
     runs-on: ubuntu-latest
     outputs:
       instance_id: ${{ steps.launch.outputs.instance_id }}
@@ -49,7 +53,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           persist-credentials: false
 
@@ -389,7 +393,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           persist-credentials: false
 
@@ -556,7 +560,7 @@ jobs:
           echo "Logs downloaded from the AWS instance."
 
       - name: Upload pod logs as artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         if: always()
         with:
           name: llmd-pod-logs-pd-disaggregation

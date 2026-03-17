@@ -2,17 +2,21 @@
 
 ## Overview
 
-This guide deploys the recommended out of the box [scheduling configuration](https://github.com/llm-d/llm-d-inference-scheduler/blob/main/docs/architecture.md) for most vLLM deployments, reducing tail latency and increasing throughput through load-aware and prefix-cache aware balancing. This can be run on two GPUs that can load [Qwen/Qwen3-32B](https://huggingface.co/Qwen/Qwen3-32B).
+This guide deploys the recommended out of the box [scheduling configuration](https://github.com/llm-d/llm-d-inference-scheduler/blob/main/docs/architecture.md) for most vLLM and SGLang deployments, reducing tail latency and increasing throughput through load-aware and prefix-cache aware balancing. This can be run on two GPUs that can load [Qwen/Qwen3-32B](https://huggingface.co/Qwen/Qwen3-32B).
 
 This profile defaults to the approximate prefix cache aware scorer, which only observes request traffic to predict prefix cache locality. The [precise prefix cache aware routing feature](../precise-prefix-cache-aware) improves hit rate by introspecting the vLLM instances for cache entries and will become the default in a future release.
 
 ## Hardware Requirements
 
-This example out of the box uses 16 GPUs (8 replicas x 2 GPUs each) of any supported kind, though fewer can be used so long as `values.yaml` is also updated accordingly:
+This example out of the box uses 16 GPUs (8 replicas x 2 GPUs each) of any supported kind:
 
 - **NVIDIA GPUs**: Any NVIDIA GPU (support determined by the inferencing image used)
+- **AMD GPUs**: Any AMD GPU (support determined by the inferencing image used)
 - **Intel XPU/GPUs**: Intel Data Center GPU Max 1550 or compatible Intel XPU device
+- **Intel Gaudi (HPU)**: Gaudi 1, Gaudi 2, or Gaudi 3 with DRA support
 - **TPUs**: Google Cloud TPUs (when using GKE TPU configuration)
+
+**Using fewer accelerators**: Fewer accelerators can be used by modifying the `values.yaml` corresponding to your deployment. For example, to use only 2 GPUs with the default NVIDIA GPU deployment, update `replicas: 2` in [ms-inference-scheduling/values.yaml](./ms-inference-scheduling/values.yaml#L17-L36).
 
 **Alternative CPU Deployment**: For CPU-only deployment (no GPUs required), see the [Hardware Backends](#hardware-backends) section for CPU-specific deployment instructions. CPU deployment requires Intel/AMD CPUs with 64 cores and 64GB RAM per replica.
 
@@ -23,14 +27,14 @@ This example out of the box uses 16 GPUs (8 replicas x 2 GPUs each) of any suppo
 - Have the [Monitoring stack](../../docs/monitoring/README.md) installed on your system.
 - Create a namespace for installation.
 
-  ```
+  ```bash
   export NAMESPACE=llm-d-inference-scheduler # or any other namespace (shorter names recommended)
   kubectl create namespace ${NAMESPACE}
   ```
 
 - [Create the `llm-d-hf-token` secret in your target namespace with the key `HF_TOKEN` matching a valid HuggingFace token](../prereq/client-setup/README.md#huggingface-token) to pull models.
 - [Choose an llm-d version](../prereq/client-setup/README.md#llm-d-version)
-- [Skip if using standalone-inference-scheduling] Configure and deploy your [Gateway control plane](../prereq/gateway-provider/README.md)
+- Configure and deploy your [Gateway control plane](../prereq/gateway-provider/README.md)
 
 ## Installation
 
@@ -45,16 +49,18 @@ cd guides/inference-scheduling
 ```
 
 <!-- TABS:START -->
-<!-- TAB:GPU deployment  -->
 
-**GPU deployment**
+<!-- TAB:GPU deployment:default -->
+
+#### GPU deployment
 
 ```bash
 helmfile apply -n ${NAMESPACE}
 ```
 
-<!-- TAB:CPU deployment  -->
-**CPU-only deployment:**
+<!-- TAB:CPU deployment -->
+
+#### CPU-only deployment
 
 ```bash
 helmfile apply -e cpu -n ${NAMESPACE}
@@ -62,17 +68,17 @@ helmfile apply -e cpu -n ${NAMESPACE}
 
 <!-- TABS:END -->
 
-**_NOTE:_** You can set the `$RELEASE_NAME_POSTFIX` env variable to change the release names. This is how we support concurrent installs. Ex: `RELEASE_NAME_POSTFIX=inference-scheduling-2 helmfile apply -n ${NAMESPACE}`
+**_NOTE:_** By default, this guide creates 8 vLLM pods. For development and testing, the number can be reduced by updating number of `replicas` in [ms-inference-scheduling/values.yaml](./ms-inference-scheduling/values.yaml#L36)
 
-### Inference Request Scheduler and Hardware Options
 
-#### Inference Request Scheduler
-<!-- TABS:START -->
+**_NOTE:_** You can set the `$RELEASE_NAME_POSTFIX` env variable to change the release names. This is how we support concurrent installs. The value must follow DNS-1035 naming conventions: consist of lowercase alphanumeric characters or '-', start with an alphabetic character, and end with an alphanumeric character. Ex: `RELEASE_NAME_POSTFIX=inference-scheduling-2 helmfile apply -n ${NAMESPACE}`
 
-<!-- TAB:Gateway Option -->
-##### Gateway Option
+<details>
+<summary><h3>Advanced Gateway and Hardware Options</h3></summary>
 
-**_NOTE:_** This uses Istio as the default gateway provider, see [Gateway Option](#gateway-option) for installing with a specific provider.
+#### Gateway Options
+
+**_NOTE:_** This uses Istio as the default gateway provider, see [Gateway Options](#gateway-options) for installing with a specific provider.
 
 To specify your gateway choice you can use the `-e <gateway option>` flag, ex:
 
@@ -92,38 +98,71 @@ To see what gateway options are supported refer to our [gateway provider prereq 
 
 You can also customize your gateway, for more information on how to do that see our [gateway customization docs](../../docs/customizing-your-gateway.md).
 
-<!-- TAB: Standalone Option -->
-##### Standalone Option
-
-With this option, the inference scheduler is deployed along with a sidecar Envoy proxy instead of a proxy provisioned using the Kubernetes Gateway API.
-
-To deploy as a standalone inference scheduler, use the `-e standalone` flag, ex:
-
-```bash
-helmfile apply -e standalone -n ${NAMESPACE}
-```
-
-<!-- TABS:END -->
-
 #### Hardware Backends
 
-Currently in the `inference-scheduling` example we suppport configurations for `xpu`, `tpu`, `cpu`, and `cuda` GPUs. By default we use modelserver values supporting `cuda` GPUs, but to deploy on one of the other hardware backends you may use:
+Currently in the `inference-scheduling` example we support configurations for `amd`, `xpu`, `tpu`, `cpu`, `hpu` (Intel Gaudi) and `cuda` GPUs. By default we use modelserver values supporting `cuda` GPUs, but to deploy on one of the other hardware backends you may use:
 
 ```bash
+helmfile apply -e amd  -n ${NAMESPACE} # targets istio as gateway provider with AMD GPU hardware
 helmfile apply -e xpu  -n ${NAMESPACE} # targets istio as gateway provider with XPU hardware
+# or
+helmfile apply -e hpu  -n ${NAMESPACE} # targets istio as gateway provider with Intel Gaudi (HPU) hardware
 # or
 helmfile apply -e gke_tpu  -n ${NAMESPACE} # targets GKE externally managed as gateway provider with TPU hardware
 # or
 helmfile apply -e cpu  -n ${NAMESPACE} # targets istio as gateway provider with CPU hardware
 ```
 
+##### Intel XPU Configuration
+
+For Intel XPU deployments, the `values_xpu.yaml` uses Dynamic Resource Allocation (DRA) with a unified Intel accelerator configuration:
+
+```yaml
+# For Intel GPUs (supports both i915 and xe drivers):
+accelerator:
+  type: intel
+  dra: true
+```
+
+**Note:** The unified `intel` type works with both Intel Data Center GPU Max 1550 (i915 driver) and Intel BMG GPUs (Battlemage G21, xe driver). DRA automatically handles driver selection.
+
+**Note for Intel Gaudi (HPU) deployments:** Intel Gaudi uses Dynamic Resource Allocation (DRA) support. Ensure you have the [Intel Resource Drivers for Kubernetes](https://github.com/intel/intel-resource-drivers-for-kubernetes) installed on your cluster. See [Accelerator documentation](../../docs/accelerators/README.md#dynamic-resource-allocation) for setup details.
+
 ##### CPU Inferencing
 
 This case expects using 4th Gen Intel Xeon processors (Sapphire Rapids) or later.
 
+</details>
+
+### Inference Server Selection
+
+By default, this well-lit path uses vLLM as the inference server for AI model serving.
+In case you want to deploy SGLang as the inference server, use:
+
+```bash
+export INFERENCE_SERVER=sglang
+helmfile apply -n ${NAMESPACE}
+```
+
+**_NOTE:_** Currently you can use this option only with the default hardware (i.e., `GPU` hardware).
+
 ### Install HTTPRoute When Using Gateway option
 
 Follow provider specific instructions for installing HTTPRoute.
+
+**_IMPORTANT:_** If you set the `$RELEASE_NAME_POSTFIX` environment variable, you **must** update the HTTPRoute file to match your custom release names before applying it. The HTTPRoute references the Gateway and InferencePool names which include the release name postfix.
+
+For example, if you set `RELEASE_NAME_POSTFIX=my-custom`, you need to update the HTTPRoute:
+
+```bash
+# Update the HTTPRoute to match your release names
+sed -e "s/infra-inference-scheduling-inference-gateway/infra-my-custom-inference-gateway/g" \
+    -e "s/gaie-inference-scheduling/gaie-my-custom/g" \
+    httproute.yaml > httproute-custom.yaml
+
+# Then apply the customized HTTPRoute
+kubectl apply -f httproute-custom.yaml -n ${NAMESPACE}
+```
 
 #### Install for "kgateway" or "istio"
 
@@ -145,19 +184,14 @@ kubectl apply -f httproute.yaml -n ${NAMESPACE}
 
 ## Verify the Installation
 
-<!-- TABS:START -->
-
-<!-- TAB:Gateway Option -->
-### Gateway option
-
 - Firstly, you should be able to list all helm releases to view the 3 charts got installed into your chosen namespace:
 
 ```bash
 helm list -n ${NAMESPACE}
 NAME                        NAMESPACE                   REVISION  UPDATED                                 STATUS      CHART                       APP VERSION
-gaie-inference-scheduling   llm-d-inference-scheduler   1         2026-01-26 15:11:26.506854 +0200 IST    deployed    inferencepool-v1.3.0        v1.3.0
+gaie-inference-scheduling   llm-d-inference-scheduler   1         2026-01-26 15:11:26.506854 +0200 IST    deployed    inferencepool-v1.3.1        v1.3.1
 infra-inference-scheduling  llm-d-inference-scheduler   1         2026-01-26 15:11:21.008163 +0200 IST    deployed    llm-d-infra-v1.3.6          v0.3.0
-ms-inference-scheduling     llm-d-inference-scheduler   1         2026-01-26 15:11:39.385111 +0200 IST    deployed    llm-d-modelservice-v0.3.17  v0.3.0
+ms-inference-scheduling     llm-d-inference-scheduler   1         2026-01-26 15:11:39.385111 +0200 IST    deployed    llm-d-modelservice-v0.4.7   v0.4.0
 ```
 
 - Out of the box with this example you should have the following resources:
@@ -193,43 +227,41 @@ replicaset.apps/infra-inference-scheduling-inference-gateway-istio-55fd84c7fd   
 replicaset.apps/ms-inference-scheduling-llm-d-modelservice-decode-866b7c8768    8         8         8       35m
 ```
 
-<!-- TAB: Standalone Option -->
-### Standalone option
+### Test the Deployment
 
-- Firstly, you should be able to list all helm releases to view the 2 charts got installed into your chosen namespace:
-
-```bash
-helm list -n ${NAMESPACE}
-NAME                        NAMESPACE                 REVISION  UPDATED                               STATUS    CHART                       APP VERSION
-gaie-inference-scheduling   llm-d-inference-scheduler 1         2025-08-24 11:24:53.231918 -0700 PDT  deployed  inferencepool-v1.2.0        v1.2.0
-ms-inference-scheduling     llm-d-inference-scheduler 1         2025-08-24 11:24:58.360173 -0700 PDT  deployed  llm-d-modelservice-v0.3.17  v0.3.0
-```
-
-- Out of the box with this example you should have the following resources:
+You can verify the deployment is working by creating a port-forward to the Istio gateway service and sending a curl command:
 
 ```bash
-kubectl get all -n ${NAMESPACE}
-NAME                                                                  READY   STATUS    RESTARTS   AGE
-pod/gaie-inference-scheduling-epp-f8fbd9897-cxfvn                     1/1     Running   0          3m59s
-pod/ms-inference-scheduling-llm-d-modelservice-decode-8ff7fd5b58lw9   1/1     Running   0          3m55s
-pod/ms-inference-scheduling-llm-d-modelservice-decode-8ff7fd5bt5f9s   1/1     Running   0          3m55s
-
-NAME                                                         TYPE           CLUSTER-IP    EXTERNAL-IP   PORT(S)                        AGE
-service/gaie-inference-scheduling-epp                        ClusterIP      10.16.3.151   <none>        9002/TCP,9090/TCP              3m59s
-service/gaie-inference-scheduling-ip-18c12339                ClusterIP      None          <none>        54321/TCP                      3m59s
-
-NAME                                                                 READY   UP-TO-DATE   AVAILABLE   AGE
-deployment.apps/gaie-inference-scheduling-epp                        1/1     1            1           4m
-deployment.apps/ms-inference-scheduling-llm-d-modelservice-decode    2/2     2            2           3m56s
-
-NAME                                                                           DESIRED   CURRENT   READY   AGE
-replicaset.apps/gaie-inference-scheduling-epp-f8fbd9897                        1         1         1       4m
-replicaset.apps/ms-inference-scheduling-llm-d-modelservice-decode-8ff7fd5b8    2         2         2       3m56s
+# Create port-forward to the gateway service
+kubectl port-forward -n ${NAMESPACE} svc/infra-inference-scheduling-inference-gateway-istio 8080:80
 ```
 
-**_NOTE:_** This assumes no other guide deployments in your given `${NAMESPACE}` and you have not changed the default release names via the `${RELEASE_NAME}` environment variable.
+In another terminal, send a test request:
 
-<!-- TABS:END -->
+```bash
+# Test with a simple completion request
+curl -X POST http://localhost:8080/v1/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "Qwen/Qwen3-32B",
+    "prompt": "Hello, how are you?",
+    "max_tokens": 50
+  }'
+```
+
+Or test with a chat completion:
+
+```bash
+curl -X POST http://localhost:8080/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "Qwen/Qwen3-32B",
+    "messages": [{"role": "user", "content": "Hello, how are you?"}],
+    "max_tokens": 50
+  }'
+```
+
+**_NOTE:_** If you set a custom `RELEASE_NAME_POSTFIX`, replace `infra-inference-scheduling-inference-gateway-istio` with `infra-${RELEASE_NAME_POSTFIX}-inference-gateway-istio` in the port-forward command.
 
 ## Using the stack
 
@@ -237,29 +269,28 @@ For instructions on getting started making inference requests see [our docs](../
 
 ## Benchmarking
 
-To run benchmarks against the installed llm-d stack, you need [run_only.sh](https://github.com/llm-d/llm-d-benchmark/blob/main/existing_stack/run_only.sh), a template file from [guides/benchmark](../benchmark/), and a Persistent Volume Claim (PVC) to store the results. Follow the instructions in the [benchmark doc](../benchmark/README.md). 
+To run benchmarks against the installed llm-d stack, you need [run_only.sh](https://github.com/llm-d/llm-d-benchmark/blob/main/existing_stack/run_only.sh), a template file from [guides/benchmark](../benchmark/), and a Persistent Volume Claim (PVC) to store the results. Follow the instructions in the [benchmark doc](../benchmark/README.md).
 
 ### Example
 
 This example uses [run_only.sh](https://github.com/llm-d/llm-d-benchmark/blob/main/existing_stack/run_only.sh) with the template [inference_scheduling_guide_template.yaml](../benchmark/inference_scheduling_guide_template.yaml).
 
-The benchmark launches a pod (`llmdbench-harness-launcher`) that, in this case, uses `inference-perf` with a shared prefix synthetic workload named `shared_prefix_synthetic`. This workload runs several stages with different rates. The results will be stored on the provided PVC, accessible through the `llmdbench-harness-launcher` pod. Each experiment is saved under the `requests` folder, e.g.,/`requests/inference-perf_<experiment ID>_shared_prefix_synthetic_inference-scheduling_<model name>` folder. 
+The benchmark launches a pod (`llmdbench-harness-launcher`) that, in this case, uses `inference-perf` with a shared prefix synthetic workload named `shared_prefix_synthetic`. This workload runs several stages with different rates. The results will be stored on the provided PVC, accessible through the `llmdbench-harness-launcher` pod. Each experiment is saved under the `requests` folder, e.g.,/`requests/inference-perf_<experiment ID>_shared_prefix_synthetic_inference-scheduling_<model name>` folder.
 
 Several results files will be created (see [Benchmark doc](../benchmark/README.md)), including a yaml file in a "standard" benchmark report format (see [Benchmark Report](https://github.com/llm-d/llm-d-benchmark/blob/main/docs/benchmark_report.md)).
-
 
   ```bash
   curl -L -O https://raw.githubusercontent.com/llm-d/llm-d-benchmark/main/existing_stack/run_only.sh
   chmod u+x run_only.sh
   select f in $(
-      curl -s https://api.github.com/repos/llm-d/llm-d/contents/guides/benchmark?ref=main | 
+      curl -s https://api.github.com/repos/llm-d/llm-d/contents/guides/benchmark?ref=main |
       sed -n '/[[:space:]]*"name":[[:space:]][[:space:]]*"\(inference_scheduling.*\_template\.yaml\)".*/ s//\1/p'
-    ); do 
+    ); do
     curl -LJO "https://raw.githubusercontent.com/llm-d/llm-d/main/guides/benchmark/$f"
     break
   done
   ```
-  
+
 Choose the `inference_scheduling_guide_template.yaml` template, then run:
 
   ```bash
@@ -270,37 +301,38 @@ Choose the `inference_scheduling_guide_template.yaml` template, then run:
   ```
 
 Edit `config.yaml` if further customization is needed, and then run the command
+
   ```bash
   ./run_only.sh -c config.yaml
   ```
 
-The output will show the progress of the `inference-perf` benchmark as it runs 
+The output will show the progress of the `inference-perf` benchmark as it runs
 <details>
 <summary><b><i>Click</i></b> here to view the expected output</summary>
 
-  ```
+  ```text
   ...
   2026-01-14 12:58:15,472 - inference_perf.client.filestorage.local - INFO - Report files will be stored at: /requests/inference-perf_1768395442_shared_prefix_synthetic_inference-scheduling-Qwen3-0.6B
   2026-01-14 12:58:18,414 - inference_perf.loadgen.load_generator - INFO - Stage 0 - run started
-  Stage 0 progress: 100%|██████████| 1.0/1.0 [00:52<00:00, 52.06s/it] 
+  Stage 0 progress: 100%|██████████| 1.0/1.0 [00:52<00:00, 52.06s/it]
   2026-01-14 12:59:10,503 - inference_perf.loadgen.load_generator - INFO - Stage 0 - run completed
   2026-01-14 12:59:11,504 - inference_perf.loadgen.load_generator - INFO - Stage 1 - run started
-  Stage 1 progress: 100%|██████████| 1.0/1.0 [00:52<00:00, 52.05s/it]   
+  Stage 1 progress: 100%|██████████| 1.0/1.0 [00:52<00:00, 52.05s/it]
   2026-01-14 13:00:03,566 - inference_perf.loadgen.load_generator - INFO - Stage 1 - run completed
   2026-01-14 13:00:04,569 - inference_perf.loadgen.load_generator - INFO - Stage 2 - run started
-  Stage 2 progress: 100%|██████████| 1.0/1.0 [00:52<00:00, 52.05s/it]   
+  Stage 2 progress: 100%|██████████| 1.0/1.0 [00:52<00:00, 52.05s/it]
   2026-01-14 13:00:56,620 - inference_perf.loadgen.load_generator - INFO - Stage 2 - run completed
   Stage 3 progress:   0%|          | 0/1.0 [00:00<?, ?it/s]2026-01-14 13:00:57,621 - inference_perf.loadgen.load_generator - INFO - Stage 3 - run started
   Stage 3 progress: 100%|██████████| 1.0/1.0 [00:52<00:00, 52.14s/it]  2026-01-14 13:01:49,675 - inference_perf.loadgen.load_generator - INFO - Stage 3 - run completed
   Stage 3 progress: 100%|██████████| 1.0/1.0 [00:52<00:00, 52.05s/it]
   2026-01-14 13:01:50,677 - inference_perf.loadgen.load_generator - INFO - Stage 4 - run started
   Stage 4 progress:  98%|█████████▊| 0.975/1.0 [00:51<00:01, 53.81s/it]2026-01-14 13:02:42,726 - inference_perf.loadgen.load_generator - INFO - Stage 4 - run completed
-  Stage 4 progress: 100%|██████████| 1.0/1.0 [00:52<00:00, 52.05s/it]  
+  Stage 4 progress: 100%|██████████| 1.0/1.0 [00:52<00:00, 52.05s/it]
   2026-01-14 13:02:43,727 - inference_perf.loadgen.load_generator - INFO - Stage 5 - run started
   Stage 5 progress:  98%|█████████▊| 0.976/1.0 [00:51<00:01, 47.18s/it]             2026-01-14 13:03:35,770 - inference_perf.loadgen.load_generator - INFO - Stage 5 - run completed
-  Stage 5 progress: 100%|██████████| 1.0/1.0 [00:52<00:00, 52.04s/it]  
+  Stage 5 progress: 100%|██████████| 1.0/1.0 [00:52<00:00, 52.04s/it]
   2026-01-14 13:03:36,771 - inference_perf.loadgen.load_generator - INFO - Stage 6 - run started
-  Stage 6 progress: 100%|██████████| 1.0/1.0 [00:52<00:00, 52.05s/it]   
+  Stage 6 progress: 100%|██████████| 1.0/1.0 [00:52<00:00, 52.05s/it]
   2026-01-14 13:04:28,826 - inference_perf.loadgen.load_generator - INFO - Stage 6 - run completed
   2026-01-14 13:04:29,932 - inference_perf.reportgen.base - INFO - Generating Reports...
   ...
@@ -308,13 +340,12 @@ The output will show the progress of the `inference-perf` benchmark as it runs
 
 </details>
 
-
 ### Benchmarking Report
-  
-There is a report for each stage. 
+
+There is a report for each stage.
 <details>
 <summary><b><i>Click</i></b> here to view the report for `rate=10` from the above example</summary>
-  
+
   ```yaml
   metrics:
     latency:
@@ -576,8 +607,8 @@ There is a report for each stage.
 
 ### Comparing LLM-d scheduling to a simple kubernetes service
 
-We examine the overall behavior of the entire workload of the example above, using the `summary_lifecycle_metrics.json` produced by 
-`inference-perf`.   
+We examine the overall behavior of the entire workload of the example above, using the `summary_lifecycle_metrics.json` produced by
+`inference-perf`.
 For comparison, we ran the same workload on a k8s service endpoint that directly uses the vLLM pods as backends.
 
 - **Throughput**: Requests/sec 38.9% ; Output tokens/sec 38.8%
@@ -596,9 +627,8 @@ For comparison, we ran the same workload on a k8s service endpoint that directly
 | Time/output token (ms)                                           | 52.91     | 79.24     | +0.02633         | +49.8%     |
 | Inter-token latency (ms)                                         | 32.01     | 51.32     | +0.01930         | +60.3%     |
 
-
-<!-- 
-#### More 
+<!--
+#### More
 
 | Metric                                                           | k8s       | llmd      | Δ (llmd - k8s)   | Δ% vs k8s   |
 |:-----------------------------------------------------------------|:----------|:----------|:-----------------|:------------|
@@ -619,7 +649,6 @@ For comparison, we ran the same workload on a k8s service endpoint that directly
 | Time per output token min (s/token)                              | 0.016120  | 0.015833  | -0.000288        | -1.8%       |
 | Time per output token max (s/token)                              | 0.091111  | 0.171244  | 0.080133         | 88.0%       |
 -->
-
 
 ## Cleanup
 
@@ -662,4 +691,3 @@ kubectl delete -f httproute.yaml -n ${NAMESPACE}
 ## Customization
 
 For information on customizing a guide and tips to build your own, see [our docs](../../docs/customizing-a-guide.md)
-

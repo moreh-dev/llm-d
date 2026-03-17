@@ -42,7 +42,7 @@ SIGs operate within the broader llm-d project governance framework defined in [P
 > For up-to-date meeting times, see the [Public Meeting Calendar](https://llm-d.ai/docs/community#public-meeting-calendar).
 
 | SIG | Focus Area | Documentation |
-|-----|------------|---------------|
+| ----- | ------------ | --------------- |
 | **[SIG Inference Scheduler](#sig-inference-scheduler)** | Intelligent request routing, load balancing, and traffic management | • [Meeting Recordings and Docs](https://drive.google.com/drive/folders/1aKTJru43krjHP2ORayEEp4JP-N7dJL8S)<br>• [llm-d-inference-scheduler Repository](https://github.com/llm-d/llm-d-inference-scheduler/) |
 | **[SIG Benchmarking](#sig-benchmarking)** | Performance testing, benchmarking frameworks, and optimization | • [Meeting Recordings and Docs](https://drive.google.com/drive/folders/1Hd-rCRLDbucl-LD0RlQwOCLqERWF-obT)<br>• [llm-d-benchmark Repository](https://github.com/llm-d/llm-d-benchmark) |
 | **[SIG PD-Disaggregation](#sig-pd-disaggregation)** | Prefill/decode separation, distributed serving, and workload disaggregation | • [Meeting Recordings and Docs](https://drive.google.com/drive/folders/1jk7wtojsWNbYQVf7BY8BEvIg8FMRZV0q)<br>• [llm-d-routing-sidecar Repository](https://github.com/llm-d/llm-d-routing-sidecar) |
@@ -50,13 +50,14 @@ SIGs operate within the broader llm-d project governance framework defined in [P
 | **[SIG Installation](#sig-installation)** | Kubernetes integration, deployment tooling, and platform operations | • [Meeting Recordings and Docs](https://drive.google.com/drive/folders/1H-0Y8fXepzrYpcaUOBfuphn1Cl-gU0xr)<br>• [llm-d-modelservice Repository](https://github.com/llm-d-incubation/llm-d-modelservice)<br>• [llm-d-infra Repository](https://github.com/llm-d-incubation/llm-d-infra) |
 | **[SIG Autoscaling](#sig-autoscaling)** | Traffic-aware autoscaling, resource management, and capacity planning | • [Meeting Recordings and Docs](https://drive.google.com/drive/folders/1iDlTgpFPOrSQn7dWR3uCQLtqhz86HTAi)<br>• [workload-variant-autoscaler Repository](https://github.com/llm-d-incubation/workload-variant-autoscaler) |
 | **[SIG Observability](#sig-observability)** | Monitoring, logging, metrics, and operational visibility | • [Meeting Recordings and Docs](https://drive.google.com/drive/folders/1H-TVTCKYVxUn4fER7xuTPmscNttZCutN)<br>• [llm-d Observability Documentation](https://github.com/llm-d/llm-d/tree/main/docs/monitoring) |
+| **[SIG RL](#sig-rl)** | Improve SOTA performance for RL workloads | • Meeting Recordings and Docs - TODO |
 
 ## SIG Detailed Descriptions
 
 ### SIG Inference Scheduler
 
 > **👥 Leadership:** [Nili Guy](https://github.com/nilig), [Abdullah Gharaibeh](https://github.com/ahg-g), [Vita Bortnikov](https://github.com/vitabortnikov)
-
+>
 > [**⭐️ North Star Design Document** ↗️](https://docs.google.com/document/d/1kE1LY8OVjiOgKVD9-9Po96HODbTIbgHp4qgvw06BCOc) *(Google Docs)*
 
 **Charter**: Develop and maintain intelligent request routing and load balancing systems that optimize for latency, throughput, and resource utilization across distributed inference workloads.
@@ -78,7 +79,7 @@ SIGs operate within the broader llm-d project governance framework defined in [P
 ### SIG Benchmarking
 
 > **👥 Leadership:** [Marcio A L Silva](https://github.com/maugustosilva), [Ashok Chandrasekar](https://github.com/achandrasekar)
-
+>
 > [**⭐️ North Star Design Document** ↗️](https://docs.google.com/document/d/1DtSEMRu3ann5M43TVB3vENPRoRkqBr_UiuwFnzit8mw) *(Google Docs)*
 
 **Charter**: Establish comprehensive performance testing and benchmarking frameworks to ensure llm-d delivers optimal performance across diverse workloads and hardware configurations.
@@ -100,7 +101,7 @@ SIGs operate within the broader llm-d project governance framework defined in [P
 ### SIG PD-Disaggregation
 
 > **👥 Leadership:** [Robert Shaw](https://github.com/robertgshaw2-redhat), [Tyler Michael Smith](https://github.com/tlrmchlsmth)
-
+>
 > [**⭐️ North Star Design Document** ↗️](https://docs.google.com/document/d/1FNN5snmipaTxEA1FGEeSH7Z_kEqskouKD1XYhVyTHr8) *(Google Docs)*
 
 **Charter**: Design and implement prefill/decode disaggregation patterns that enable efficient separation of inference workloads across heterogeneous hardware and scaling requirements.
@@ -122,7 +123,7 @@ SIGs operate within the broader llm-d project governance framework defined in [P
 ### SIG KV-Disaggregation
 
 > **👥 Leadership:** [Maroon Ayoub](https://github.com/vMaroon), [Danny Harnik](https://github.com/dannyharnik)
-
+>
 > [**⭐️ North Star Design Document** ↗️](https://docs.google.com/document/d/1EM1QtDUaw7pVRkbHQFTSCQhmWqAcRPJugJgqPbvzGTA) *(Google Docs)*
 
 **Charter**: Design and implement distributed KV caching solutions that improve inference performance through intelligent cache management, prefix sharing, and disaggregated storage.
@@ -144,7 +145,7 @@ SIGs operate within the broader llm-d project governance framework defined in [P
 ### SIG Installation
 
 > **👥 Leadership:** [Brent Salisbury](https://github.com/nerdalert), [Greg Pereira](https://github.com/Gregory-Pereira)
-
+>
 > [**⭐️ North Star Design Document** ↗️](https://docs.google.com/document/d/1Y0fJGhELfdXj-Xkznhrl48sDOp_dUvuy5sX4lf9g63o) *(Google Docs)*
 
 **Charter**: Ensure llm-d integrates seamlessly with Kubernetes and provides robust deployment, scaling, and operational capabilities for production environments.
@@ -166,7 +167,7 @@ SIGs operate within the broader llm-d project governance framework defined in [P
 ### SIG Autoscaling
 
 > **👥 Leadership:** [Tamar Eilam](https://github.com/eilamt), [Abhishek Malvankar](https://github.com/asm582)
-
+>
 > [**⭐️ North Star Design Document** ↗️](https://docs.google.com/document/d/1inTneLEZTv3rDEBB9KLOB9K6oMq8c3jkogARJqdt_58) *(Google Docs)*
 
 **Charter**: Develop intelligent autoscaling solutions that automatically adjust llm-d deployments based on traffic patterns, workload characteristics, and hardware utilization.
@@ -188,7 +189,7 @@ SIGs operate within the broader llm-d project governance framework defined in [P
 ### SIG Observability
 
 > **👥 Leadership:** [Sally O'Malley](https://github.com/sallyom), [Roy Nissim](https://www.linkedin.com/in/roy-nissim/), [Benedikt Bongartz](https://github.com/frzifus)
-
+>
 > [**⭐️ North Star Design Document** ↗️](https://docs.google.com/document/d/1UNa75BBzoMFZgImAnqd89KyT-W1MmO0VKLRqgF9ikWA) *(Google Docs)*
 
 **Charter**: Provide comprehensive monitoring, logging, and observability capabilities that enable operators to understand system behavior, diagnose issues, and optimize performance.
@@ -205,6 +206,27 @@ SIGs operate within the broader llm-d project governance framework defined in [P
 
 - **Slack Channel**: [#sig-observability](https://llm-d.slack.com/archives/C09305NHZ45)
 - **Meeting Recordings and Docs**: [Public Google Drive](https://drive.google.com/drive/folders/1H-TVTCKYVxUn4fER7xuTPmscNttZCutN)
+
+### SIG RL
+
+> **👥 Leadership:** [Bogdan Berce](https://github.com/bogdanatwork), [Robert Shaw](https://github.com/robertgshaw2-redhat)
+> North Star Design Document TODO
+
+**Charter**: Assist RL teams in achieving SOTA performance for RL workloads
+
+**Key Areas**:
+
+- Metrics collection and visualization
+- Distributed tracing and logging
+- Performance monitoring and alerting
+- Operational dashboards and reporting
+- Integration with monitoring ecosystems (Prometheus, Grafana, etc.)
+
+**💬 Communication**:
+
+- **Slack Channel**: [#sig-rl](https://llm-d.slack.com/archives/C0AGTS0UF5L)
+- **Meeting Recordings and Docs**: Public Google Drive TODO
+
 
 ## Getting Involved
 
