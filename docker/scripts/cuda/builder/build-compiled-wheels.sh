@@ -11,6 +11,8 @@ set -Eeux
 # - FLASHINFER_VERSION: FlashInfer git ref
 # - DEEPEP_REPO: DeepEP repository URL
 # - DEEPEP_VERSION: DeepEP version tag
+# - DEEPEP_GB200_REPO: GB200-specific DeepEP repository URL (optional)
+# - DEEPEP_GB200_VERSION: GB200-specific DeepEP version tag (optional)
 # - DEEPGEMM_REPO: DeepGEMM repository URL
 # - DEEPGEMM_VERSION: DeepGEMM version tag
 # - USE_SCCACHE: whether to use sccache (true/false)
@@ -65,6 +67,26 @@ if [ -n "${BACKUP_CXXFLAGS+x}" ]; then
   export CXXFLAGS="${BACKUP_CXXFLAGS}"
 else
   unset CXXFLAGS
+fi
+
+# build GB200-specific DeepEP wheel (if configured)
+if [ -n "${DEEPEP_GB200_REPO:-}" ] && [ -n "${DEEPEP_GB200_VERSION:-}" ]; then
+  echo "=== Building GB200 DeepEP variant ==="
+  mkdir -p /wheels-gb200
+  git clone "${DEEPEP_GB200_REPO}" deepep-gb200
+  cd deepep-gb200
+  git fetch origin "${DEEPEP_GB200_VERSION}"
+  git checkout -q "${DEEPEP_GB200_VERSION}"
+  BACKUP_CXXFLAGS="${CXXFLAGS-}"
+  export CXXFLAGS="${CXXFLAGS:-} -D__NVSHMEM_NUMBA_SUPPORT__"
+  uv build --wheel --no-build-isolation --out-dir /wheels-gb200
+  cd ..
+  rm -rf deepep-gb200
+  if [ -n "${BACKUP_CXXFLAGS+x}" ]; then
+    export CXXFLAGS="${BACKUP_CXXFLAGS}"
+  else
+    unset CXXFLAGS
+  fi
 fi
 
 # build DeepGEMM wheel

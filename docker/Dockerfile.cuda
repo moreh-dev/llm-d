@@ -54,8 +54,12 @@ ARG LMCACHE_REPO="https://github.com/LMCache/LMCache.git"
 ARG LMCACHE_VERSION="v0.3.14"
 
 # Kernels
-ARG DEEPEP_REPO="https://github.com/tlrmchlsmth/DeepEP"
-ARG DEEPEP_VERSION="sgl-gb200-blog-pt2"
+ARG DEEPEP_REPO="https://github.com/neuralmagic/DeepEP"
+ARG DEEPEP_VERSION="38d21b7f9bb6f3b102b1819d09439686eaa87ce8"
+
+# GB200-specific DeepEP variant (built alongside standard, selected via --target runtime-gb200)
+ARG DEEPEP_GB200_REPO="https://github.com/tlrmchlsmth/DeepEP"
+ARG DEEPEP_GB200_VERSION="sgl-gb200-blog-pt2"
 ARG DEEPGEMM_REPO="https://github.com/deepseek-ai/DeepGEMM"
 ARG DEEPGEMM_VERSION="v2.1.0"
 ARG FLASHINFER_REPO="https://github.com/flashinfer-ai/flashinfer.git"
@@ -268,6 +272,8 @@ WORKDIR /workspace/vllm
 # Build compiled packages as wheels (only ones that need build tools)
 ARG DEEPEP_REPO
 ARG DEEPEP_VERSION
+ARG DEEPEP_GB200_REPO
+ARG DEEPEP_GB200_VERSION
 ARG DEEPGEMM_REPO
 ARG DEEPGEMM_VERSION
 ARG FLASHINFER_REPO
@@ -538,4 +544,23 @@ ENV PATH="${VIRTUAL_ENV}/bin:${CUDA_HOME}/bin:/usr/local/nvidia/bin:${PATH}" \
 USER 2000
 WORKDIR /home/vllm
 
+# ============================================================================
+# GB200 RUNTIME STAGE - Swap in GB200-specific DeepEP wheel
+# Usage: docker build --target runtime-gb200 ...
+# ============================================================================
+FROM runtime AS runtime-gb200
+
+USER 0
+COPY --from=builder /wheels-gb200/*.whl /tmp/wheels-gb200/
+RUN . /opt/vllm/bin/activate && \
+    uv pip uninstall deep-ep && \
+    uv pip install /tmp/wheels-gb200/*.whl && \
+    rm -rf /tmp/wheels-gb200
+USER 2000
+
 ENTRYPOINT ["python", "-m", "vllm.entrypoints.openai.api_server"]
+
+# ============================================================================
+# DEFAULT - runtime is the default target when no --target is specified
+# ============================================================================
+FROM runtime
