@@ -50,5 +50,11 @@ if [ "${USE_SCCACHE}" = "true" ]; then
         return 0
     fi
 
-    echo "sccache successfully configured with cache prefix: ${SCCACHE_S3_KEY_PREFIX}"
+    echo "sccache successfully configured:"
+    echo "  - Bucket: ${SCCACHE_BUCKET}"
+    echo "  - Region: ${SCCACHE_REGION}"
+    echo "  - Key prefix: ${SCCACHE_S3_KEY_PREFIX}"
+    echo "  - Socket: ${SCCACHE_SERVER_UDS}"
+    echo "  - AWS credentials: $([ -n \"${AWS_ACCESS_KEY_ID:-}\" ] && echo 'set' || echo 'NOT SET')"
+    /usr/local/bin/sccache --show-stats 2>&1 | head -5
 fi

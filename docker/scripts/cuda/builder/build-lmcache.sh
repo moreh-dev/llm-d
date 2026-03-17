@@ -22,9 +22,10 @@ cd /tmp
 # PyTorch cpp_extension doesn't recognize "10.0f" syntax, normalize to standard format
 export TORCH_CUDA_ARCH_LIST="${TORCH_CUDA_ARCH_LIST//10.0f/10.0}"
 
-if [ "${USE_SCCACHE}" = "true" ]; then
-    export CC="sccache gcc" CXX="sccache g++" NVCC="sccache nvcc"
-fi
+# Note: We intentionally do NOT set CC="sccache gcc" here because
+# torch's cpp_extension passes CC/CXX to nvcc -ccbin which doesn't
+# understand space-separated wrapper commands like "sccache gcc".
+# sccache for these builds would require NVCC_CCBIN_FLAGS or similar.
 
 git clone "${INFINISTORE_REPO}" infinistore && cd infinistore
 git checkout -q "${INFINISTORE_VERSION}"
