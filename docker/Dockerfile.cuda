@@ -70,8 +70,10 @@ ARG FLASHINFER_VERSION="v0.6.6"
 # vLLM build settings
 ARG VLLM_REPO="https://github.com/vllm-project/vllm.git"
 
-# v0.18.0rc0 plus a few commits to pick up nvfp4 eplb
-ARG VLLM_COMMIT_SHA="fd4d96302a2999a8d773b1b331951d232e3f5e05"
+# vLLM main plus two fixes: 
+#    https://github.com/vllm-project/vllm/pull/37322
+#    https://github.com/vllm-project/vllm/commit/be441ac536181ee54546cb3ed2f3f505ebe6ff58
+ARG VLLM_COMMIT_SHA="be441ac536181ee54546cb3ed2f3f505ebe6ff58"
 ARG VLLM_PRECOMPILED_WHEEL_COMMIT="v0.18.0rc0"
 ARG VLLM_PREBUILT=0
 # Build from source for CUDA 13.0 (precompiled wheels only exist for CUDA 12.x)
