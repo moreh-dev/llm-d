@@ -49,17 +49,21 @@ ARG LMCACHE_REPO="https://github.com/LMCache/LMCache.git"
 ARG LMCACHE_VERSION="v0.3.8"
 
 # Kernels
-ARG DEEPEP_REPO="https://github.com/fzyzcjy/DeepEP"
-ARG DEEPEP_VERSION="gb200_blog_part_2"
+ARG DEEPEP_REPO="https://github.com/tlrmchlsmth/DeepEP"
+ARG DEEPEP_VERSION="sgl-gb200-blog-pt2"
 ARG DEEPGEMM_REPO="https://github.com/deepseek-ai/DeepGEMM"
 ARG DEEPGEMM_VERSION="v2.1.0"
 ARG FLASHINFER_REPO="https://github.com/flashinfer-ai/flashinfer.git"
-ARG FLASHINFER_VERSION="v0.6.4"
+
+# May need to be dropped to v0.6.4
+ARG FLASHINFER_VERSION="v0.6.6"
 
 # vLLM build settings
-ARG VLLM_REPO="https://github.com/tlrmchlsmth/vllm.git"
-ARG VLLM_COMMIT_SHA="gb200_working"
-#ARG VLLM_PRECOMPILED_WHEEL_COMMIT="f0d525171557e3fe74e8e6df52257f9d66831d3f"
+ARG VLLM_REPO="https://github.com/vllm-project/vllm.git"
+
+# v0.18.0rc0 plus a few commits to pick up nvfp4 eplb
+ARG VLLM_COMMIT_SHA="fd4d96302a2999a8d773b1b331951d232e3f5e05"
+ARG VLLM_PRECOMPILED_WHEEL_COMMIT="v0.18.0rc0"
 ARG VLLM_PREBUILT=0
 # Build from source for CUDA 13.0 (precompiled wheels only exist for CUDA 12.x)
 ARG VLLM_USE_PRECOMPILED=0
