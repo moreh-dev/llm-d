@@ -150,3 +150,7 @@ fi
 
 # cleanup
 rm -rf /tmp/wheels
+rm -rf /opt/vllm-source/.deps
+rm -rf /opt/vllm-source/.git
+rm -rf /opt/vllm-source/docs
+rm -rf /opt/vllm-source/tests
