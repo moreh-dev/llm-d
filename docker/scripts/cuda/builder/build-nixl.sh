@@ -35,7 +35,7 @@ fi
 git clone "${NIXL_REPO}" nixl && cd nixl
 git checkout -q "${NIXL_VERSION}"
 
-# Ubuntu image needs to be built against Ubuntu 20.04 and EFA only supports 22.04 and 24.04.
+# EFA only supports Ubuntu 22.04 and 24.04 on RHEL.
 EFA_FLAG=""
 if [ "${ENABLE_EFA}" = "true" ] && [ "$TARGETOS" = "rhel" ]; then
     EFA_FLAG="-Dlibfabric_path=${EFA_PREFIX}"

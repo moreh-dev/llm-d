@@ -27,7 +27,7 @@ ARCH ?= amd64
 OS ?= rhel
 
 # CUDA version (e.g., 12.8, 13.0)
-CUDA_VERSION ?= 12.8
+CUDA_VERSION ?= 13.0
 CUDA_MAJOR := $(word 1,$(subst ., ,$(CUDA_VERSION)))
 CUDA_MINOR := $(word 2,$(subst ., ,$(CUDA_VERSION)))
 
