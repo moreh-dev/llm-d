@@ -1,9 +1,16 @@
 SHELL := /usr/bin/env bash
 
+include docker/common-versions
+
 # Defaults
 PROJECT_NAME ?= llm-d
 DOCKERFILE_DIR = docker
+XPU_BUILD_DIR ?= .cache/vllm-src
+XPU_VLLM_TAG ?= v0.17.0
+XPU_DOCKERFILE_URL ?= https://raw.githubusercontent.com/vllm-project/vllm/$(XPU_VLLM_TAG)/docker/Dockerfile.xpu
+
 ifeq ($(DEVICE), xpu)
+	DOCKERFILE_DIR = $(XPU_BUILD_DIR)
 	DOCKERFILE ?= Dockerfile.xpu
 else ifeq ($(DEVICE), cpu)
 	DOCKERFILE ?= Dockerfile.cpu
@@ -50,6 +57,12 @@ endif
 BUILD_BASE_IMAGE_SUFFIX := $(BASE_IMAGE_SUFFIX)
 
 IMAGE_BASE ?= ghcr.io/llm-d/$(PROJECT_NAME)-$(DEVICE)
+
+BUILD_CONTEXT ?= .
+ifeq ($(DEVICE), xpu)
+	BUILD_CONTEXT = $(XPU_BUILD_DIR)
+endif
+DOCKERFILE_PATH = $(DOCKERFILE_DIR)/$(DOCKERFILE)
 
 # BUILD_TYPE, options ['dev', 'prod']
 BUILD_TYPE ?= dev
@@ -121,26 +134,27 @@ build: ##
 .PHONY: buildah-build
 buildah-build: check-builder ## Build and push image (multi-arch if supported)
 	@echo "✅ Using builder: $(BUILDER)"
+	@if [ "$(DEVICE)" = "xpu" ]; then $(MAKE) xpu-prepare; fi
 	@if [ "$(BUILDER)" = "buildah" ]; then \
-	  echo "🔧 Buildah detected: Building for $(ARCH) with $(DOCKERFILE_DIR)/$(DOCKERFILE)…"; \
-	  buildah build --file $(DOCKERFILE_DIR)/$(DOCKERFILE) --arch=$(ARCH) --os=linux --layers \
+	  echo "🔧 Buildah detected: Building for $(ARCH) with $(DOCKERFILE_PATH)…"; \
+	  buildah build --file $(DOCKERFILE_PATH) --arch=$(ARCH) --os=linux --layers \
 		$(if $(filter cuda,$(DEVICE)),--build-arg ENABLE_EFA=$(ENABLE_EFA)) \
-		-t $(IMG) . || exit 1; \
+		-t $(IMG) $(BUILD_CONTEXT) || exit 1; \
 	  echo "🚀 Pushing image: $(IMG)"; \
 	  buildah push $(IMG) docker://$(IMG) || exit 1; \
 	elif [ "$(BUILDER)" = "docker" ]; then \
 	  echo "🐳 Docker detected: Building with buildx for linux/$(ARCH)..."; \
-	  sed -e '1 s/\(^FROM\)/FROM --platform=$${BUILDPLATFORM}/' $(DOCKERFILE_DIR)/$(DOCKERFILE) >$(DOCKERFILE_DIR)/Dockerfile.cross; \
+	  sed -e '1 s/\(^FROM\)/FROM --platform=$${BUILDPLATFORM}/' $(DOCKERFILE_PATH) >$(DOCKERFILE_DIR)/Dockerfile.cross; \
 	  - docker buildx create --use --name image-builder || true; \
 	  docker buildx use image-builder; \
 	  docker buildx build --push --platform=linux/$(ARCH) --tag $(IMG) \
 		$(if $(filter cuda,$(DEVICE)),--build-arg ENABLE_EFA=$(ENABLE_EFA)) \
-		-f $(DOCKERFILE_DIR)/Dockerfile.cross . || exit 1; \
+		-f $(DOCKERFILE_DIR)/Dockerfile.cross $(BUILD_CONTEXT) || exit 1; \
 	  docker buildx rm image-builder || true; \
 	  rm $(DOCKERFILE_DIR)/Dockerfile.cross; \
 	elif [ "$(BUILDER)" = "podman" ]; then \
 	  echo "⚠️ Podman detected: Building for linux/$(ARCH)..."; \
-	  podman build --platform=linux/$(ARCH) --format=docker -f $(DOCKERFILE_DIR)/$(DOCKERFILE) -t $(IMG) . || exit 1; \
+	  podman build --platform=linux/$(ARCH) --format=docker -f $(DOCKERFILE_PATH) -t $(IMG) $(BUILD_CONTEXT) || exit 1; \
 	  podman push $(IMG) || exit 1; \
 	else \
 	  echo "❌ No supported container tool available."; \
@@ -150,6 +164,7 @@ buildah-build: check-builder ## Build and push image (multi-arch if supported)
 .PHONY:	image-build
 image-build: check-container-tool ## Build Docker image using $(CONTAINER_TOOL)
 	@printf "\033[33;1m==== Building Docker image $(IMG) for linux/$(ARCH) ====\033[0m\n"
+	@if [ "$(DEVICE)" = "xpu" ]; then $(MAKE) xpu-prepare; fi
 	$(CONTAINER_TOOL) build --progress=plain --platform linux/$(ARCH) \
 		--build-arg CUDA_MAJOR=$(CUDA_MAJOR) \
 		--build-arg CUDA_MINOR=$(CUDA_MINOR) \
@@ -162,7 +177,15 @@ image-build: check-container-tool ## Build Docker image using $(CONTAINER_TOOL)
 		$(if $(SUPPRESS_PYTHON_OUTPUT),--build-arg SUPPRESS_PYTHON_OUTPUT=$(SUPPRESS_PYTHON_OUTPUT)) \
 		--build-arg BUILD_DEBUG=$(BUILD_DEBUG) \
 		$(if $(filter cuda,$(DEVICE)),--build-arg ENABLE_EFA=$(ENABLE_EFA)) \
-		-t $(IMG) -f $(DOCKERFILE_DIR)/$(DOCKERFILE) .
+		-t $(IMG) -f $(DOCKERFILE_PATH) $(BUILD_CONTEXT)
+
+.PHONY: xpu-prepare
+xpu-prepare: ## Prepare vLLM XPU build context and upstream Dockerfile
+	@rm -rf $(XPU_BUILD_DIR)
+	@mkdir -p $(dir $(XPU_BUILD_DIR))
+	@git clone $(VLLM_REPO) $(XPU_BUILD_DIR)
+	@git -C $(XPU_BUILD_DIR) checkout $(VLLM_COMMIT_SHA)
+	@curl -fsSL $(XPU_DOCKERFILE_URL) -o $(XPU_BUILD_DIR)/docker/Dockerfile.xpu
 
 .PHONY: image-push
 image-push: check-container-tool ## Push Docker image $(IMG) to registry

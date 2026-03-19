@@ -9,6 +9,7 @@ ARG FINAL_BASE_IMAGE_SUFFIX=${BASE_IMAGE_SUFFIX}
 
 ######################## SYSTEM CONFIGURATION ########################
 
+# CUDA version - provided via build args from docker/common-versions file via GH workflow
 ARG CUDA_MAJOR=13
 ARG CUDA_MINOR=0
 ARG CUDA_PATCH=2
@@ -67,14 +68,14 @@ ARG FLASHINFER_REPO="https://github.com/flashinfer-ai/flashinfer.git"
 # May need to be dropped to v0.6.4
 ARG FLASHINFER_VERSION="v0.6.6"
 
-# vLLM build settings
-ARG VLLM_REPO="https://github.com/vllm-project/vllm.git"
-
-ARG VLLM_COMMIT_SHA="ef2c4f778df5aa07a44e663330e2dfdc16927d2a"
-ARG VLLM_PRECOMPILED_WHEEL_COMMIT="v0.18.0rc0"
-ARG VLLM_PREBUILT=0
-# Build from source for CUDA 13.0 (precompiled wheels only exist for CUDA 12.x)
-ARG VLLM_USE_PRECOMPILED=0
+# vLLM build settings - provided via build args from docker/common-versions file
+# Override here for platform-specific testing or via build args
+# For CUDA 13.0: build from source (precompiled wheels only exist for CUDA 12.x)
+ARG VLLM_REPO
+ARG VLLM_COMMIT_SHA
+ARG VLLM_PRECOMPILED_WHEEL_COMMIT
+ARG VLLM_PREBUILT
+ARG VLLM_USE_PRECOMPILED
 
 # ============================================================================
 # BUILD STAGE - Install build dependencies and create wheels
