@@ -5,18 +5,19 @@ set -Eeux
 #
 # Required environment variables:
 # - VIRTUAL_ENV: path to Python virtual environment
-# - CUDA_MAJOR: CUDA major version (e.g., 12)
-# - NVSHMEM_DIR: NVSHMEM installation directory
+# - CUDA_MAJOR: CUDA major version (e.g., 12, 13)
+# - CUDA_HOME: CUDA installation directory
 # - FLASHINFER_REPO: FlashInfer git repo
 # - FLASHINFER_VERSION: FlashInfer git ref
 # - DEEPEP_REPO: DeepEP repository URL
 # - DEEPEP_VERSION: DeepEP version tag
-# - DEEPEP_GB200_REPO: GB200-specific DeepEP repository URL (optional)
-# - DEEPEP_GB200_VERSION: GB200-specific DeepEP version tag (optional)
 # - DEEPGEMM_REPO: DeepGEMM repository URL
 # - DEEPGEMM_VERSION: DeepGEMM version tag
 # - USE_SCCACHE: whether to use sccache (true/false)
 # - TARGETPLATFORM: Docker buildx platform (e.g., linux/amd64, linux/arm64)
+# Optional environment variables:
+# - DEEPEP_GB200_REPO: GB200-specific DeepEP repository URL
+# - DEEPEP_GB200_VERSION: GB200-specific DeepEP version tag
 
 echo "BEGIN COMPILED WHEEL BUILDS LOGGING"
 

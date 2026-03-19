@@ -61,7 +61,7 @@ if [ "${ENABLE_EFA}" != "true" ] || [ "$TARGETOS" = "ubuntu" ]; then
     done
 fi
 
-# EFA only supports Ubuntu 22.04 and 24.04 on RHEL.
+# Enable EFA only for RHEL builds (Ubuntu EFA packages require 22.04+; gated on TARGETOS=rhel for now)
 EFA_FLAGS=()
 if [ "${ENABLE_EFA}" = "true" ] && [ "$TARGETOS" = "rhel" ]; then
     EFA_FLAGS=(

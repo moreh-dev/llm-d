@@ -35,7 +35,7 @@ fi
 git clone "${NIXL_REPO}" nixl && cd nixl
 git checkout -q "${NIXL_VERSION}"
 
-# EFA only supports Ubuntu 22.04 and 24.04 on RHEL.
+# Enable EFA only for RHEL builds (Ubuntu EFA packages require 22.04+; gated on TARGETOS=rhel for now)
 EFA_FLAG=""
 if [ "${ENABLE_EFA}" = "true" ] && [ "$TARGETOS" = "rhel" ]; then
     EFA_FLAG="-Dlibfabric_path=${EFA_PREFIX}"

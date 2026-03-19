@@ -428,6 +428,7 @@ RUN export UV_INSTALL_DIR=/usr/local/bin && \
     uv pip install --no-cache -U wheel
 
 # Copy sccache from builder for vLLM source builds
+# sccache binary is always installed in builder; only configured/started when USE_SCCACHE=true
 COPY --from=builder /usr/local/bin/sccache /usr/local/bin/sccache
 COPY --from=builder /usr/local/bin/setup-sccache /usr/local/bin/setup-sccache
 

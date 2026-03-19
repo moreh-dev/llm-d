@@ -29,8 +29,8 @@ if [ "${USE_SCCACHE}" = "true" ]; then
     export CC="sccache gcc" CXX="sccache g++"
 fi
 
-# Enable EFA support if ENABLE_EFA is true and on RHEL
-# EFA only supports Ubuntu 22.04 and 24.04 on RHEL.
+# Enable EFA support only for RHEL builds
+# (Ubuntu EFA packages require 22.04+; gated on TARGETOS=rhel for now)
 EFA_FLAG=""
 if [ "${ENABLE_EFA}" = "true" ] && [ "$TARGETOS" = "rhel" ]; then
     EFA_FLAG="--with-efa"

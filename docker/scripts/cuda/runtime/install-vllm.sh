@@ -65,11 +65,14 @@ apply_cherrypick "${VLLM_CHERRYPICK_1:-}" "${VLLM_CHERRYPICK_1_REMOTE:-origin}"
 apply_cherrypick "${VLLM_CHERRYPICK_2:-}" "${VLLM_CHERRYPICK_2_REMOTE:-origin}"
 
 # resolve VLLM_PRECOMPILED_WHEEL_COMMIT to actual commit SHA (wheel index uses SHAs, not tag names)
-# fetch the ref if needed (in case it differs from VLLM_COMMIT_SHA)
-git -C /opt/vllm-source fetch --depth=1 origin "${VLLM_PRECOMPILED_WHEEL_COMMIT}" 2>/dev/null || true
-# if it's already a full SHA, rev-parse will return it unchanged
-VLLM_PRECOMPILED_WHEEL_COMMIT=$(git -C /opt/vllm-source rev-parse "${VLLM_PRECOMPILED_WHEEL_COMMIT}")
-echo "DEBUG: Resolved wheel commit SHA: ${VLLM_PRECOMPILED_WHEEL_COMMIT}"
+# Only needed when using prebuilt or precompiled modes
+if [ "${VLLM_PREBUILT}" = "1" ] || [ "${VLLM_USE_PRECOMPILED}" = "1" ]; then
+  # fetch the ref if needed (in case it differs from VLLM_COMMIT_SHA)
+  git -C /opt/vllm-source fetch --depth=1 origin "${VLLM_PRECOMPILED_WHEEL_COMMIT}" 2>/dev/null || true
+  # if it's already a full SHA, rev-parse will return it unchanged
+  VLLM_PRECOMPILED_WHEEL_COMMIT=$(git -C /opt/vllm-source rev-parse "${VLLM_PRECOMPILED_WHEEL_COMMIT}")
+  echo "DEBUG: Resolved wheel commit SHA: ${VLLM_PRECOMPILED_WHEEL_COMMIT}"
+fi
 
 # detect if prebuilt wheel exists (using VLLM_PRECOMPILED_WHEEL_COMMIT for lookup)
 # note: vllm wheel index structure isn't pip-compatible, so we scrape the HTML directly

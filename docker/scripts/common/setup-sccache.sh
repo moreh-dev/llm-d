@@ -36,7 +36,7 @@ if [ "${USE_SCCACHE}" = "true" ]; then
     if ! /usr/local/bin/sccache --start-server; then
         echo "Warning: sccache failed to start, continuing without cache" >&2
         # Remove sccache binary so meson/cmake can't accidentally try to use it
-        rm -f /usr/local/bin/sccache
+        rm -f /usr/local/bin/sccache || true
         unset CMAKE_C_COMPILER_LAUNCHER CMAKE_CXX_COMPILER_LAUNCHER CMAKE_CUDA_COMPILER_LAUNCHER
         return 0
     fi
@@ -45,7 +45,7 @@ if [ "${USE_SCCACHE}" = "true" ]; then
         echo "Warning: sccache not responding properly, disabling cache" >&2
         /usr/local/bin/sccache --stop-server 2>/dev/null || true
         # Remove sccache binary so meson/cmake can't accidentally try to use it
-        rm -f /usr/local/bin/sccache
+        rm -f /usr/local/bin/sccache || true
         unset CMAKE_C_COMPILER_LAUNCHER CMAKE_CXX_COMPILER_LAUNCHER CMAKE_CUDA_COMPILER_LAUNCHER
         return 0
     fi
