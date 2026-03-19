@@ -325,7 +325,6 @@ ENV LANG="C.UTF-8" \
     UV_TORCH_BACKEND="${UV_TORCH_BACKEND:-cu${CUDA_MAJOR}${CUDA_MINOR}}" \
     UV_CONSTRAINT="/tmp/constraints.txt" \
     VIRTUAL_ENV="/opt/vllm" \
-    NVSHMEM_DIR="/opt/nvshmem-${NVSHMEM_VERSION}" \
     UCX_PREFIX="/opt/ucx" \
     EFA_PREFIX="/opt/amazon/efa" \
     CUDA_HOME="/usr/local/cuda"
@@ -478,7 +477,8 @@ COPY scripts/warn-vllm-precompiled.sh /opt/
     # 3) install vllm from source with pulling precompiled binaries (shared libraries) from the vllm wheels index - less flexible dev option, may or may not work swapping shas but faster than full editable
     # 2) install vllm from a wheel on the vllm wheels index - prod option, no flexibility
 COPY docker/scripts/cuda/runtime/install-vllm.sh /tmp/install-vllm.sh
-RUN --mount=type=cache,target=/var/cache/git \
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=cache,target=/var/cache/git \
     --mount=type=secret,id=aws_access_key_id \
     --mount=type=secret,id=aws_secret_access_key \
     bash -c "chmod +x /tmp/install-vllm.sh && \
