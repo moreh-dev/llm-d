@@ -1,9 +1,8 @@
-ARG CUDA_MAJOR=13
-ARG CUDA_MINOR=0
-ARG CUDA_PATCH=2
-ARG TARGETOS=rhel
-ARG BASE_IMAGE_SUFFIX=ubi9
-
+# Important: For Ubuntu builds, we use an older version (20.04) in the build stage
+# to maintain broad glibc compatibility. Binaries built with newer glibc versions
+# are not backwards compatible with OSes using earlier glibc versions.
+# Runtime stage can use newer Ubuntu (22.04) for updated dependencies.
+# See: https://github.com/vllm-project/vllm/blob/main/docker/Dockerfile#L18-L24
 ARG BUILD_BASE_IMAGE_SUFFIX=${BASE_IMAGE_SUFFIX}
 ARG FINAL_BASE_IMAGE_SUFFIX=${BASE_IMAGE_SUFFIX}
 
@@ -62,9 +61,8 @@ ARG DEEPEP_VERSION="38d21b7f9bb6f3b102b1819d09439686eaa87ce8"
 ARG DEEPEP_GB200_REPO="https://github.com/tlrmchlsmth/DeepEP"
 ARG DEEPEP_GB200_VERSION="sgl-gb200-blog-pt2"
 ARG DEEPGEMM_REPO="https://github.com/deepseek-ai/DeepGEMM"
-ARG DEEPGEMM_VERSION="v2.1.0"
+ARG DEEPGEMM_VERSION="v2.1.1.post3"
 ARG FLASHINFER_REPO="https://github.com/flashinfer-ai/flashinfer.git"
-
 # May need to be dropped to v0.6.4
 ARG FLASHINFER_VERSION="v0.6.6"
 
