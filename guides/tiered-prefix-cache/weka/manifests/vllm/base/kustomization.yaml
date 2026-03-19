@@ -5,7 +5,7 @@ resources:
 
 labels:
   - pairs:
-      llm-d.ai/inferenceServing: "true"
+      llm-d.ai/inference-serving: "true"
       llm-d.ai/model: Llama-33-70B-Instruct
 
 patches:
