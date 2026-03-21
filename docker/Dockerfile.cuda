@@ -523,7 +523,7 @@ ENV PATH="${VIRTUAL_ENV}/bin:/usr/local/nvidia/bin:${PATH}" \
     UCX_MEM_MMAP_HOOK_MODE=none
 
 # Add script for copying LoRA adapters from HuggingFace cache to the LoRA resolver directory
-COPY runtime/bin/copy-lora-structure.sh /usr/local/bin/copy-lora-structure
+COPY docker/runtime/bin/copy_lora_structure.sh /usr/local/bin/copy_lora_structure
 
 USER 2000
 WORKDIR /home/vllm

@@ -42,7 +42,7 @@ patches:
       kind: Deployment
       name: llm-d-model-server
     patch: |-
-      - op: add
+      - op: replace
         path: /spec/template/spec/containers/0/resources
         value:
           limits:

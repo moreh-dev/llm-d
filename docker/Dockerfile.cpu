@@ -159,7 +159,7 @@ ENV LORA_RESOLVER_DIR=/var/lib/llm-d/lora-adapters
 RUN mkdir -p "$LORA_RESOLVER_DIR"
 
 # Add script for copying LoRA adapters from HuggingFace cache to the LoRA resolver directory
-COPY runtime/bin/copy-lora-structure.sh /usr/local/bin/copy-lora-structure
+COPY docker/runtime/bin/copy_lora_structure.sh /usr/local/bin/copy_lora_structure
 
 WORKDIR /workspace
 ENTRYPOINT ["python", "-m", "vllm.entrypoints.openai.api_server"]

@@ -5,7 +5,7 @@ resources:
 
 images:
   - name: INFERENCE_SERVER_IMAGE
-    newName: ghcr.io/llm-d/llm-d-cuda-dev
+    newName: ghcr.io/llm-d/llm-d-cuda
     newTag: latest
 
 patches:

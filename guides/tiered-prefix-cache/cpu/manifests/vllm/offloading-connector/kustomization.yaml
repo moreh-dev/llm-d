@@ -7,6 +7,9 @@ patches:
       kind: Deployment
       name: llm-d-model-server
     patch: |-
+      # - op: replace
+      #   path: /spec/template/spec/containers/0/image
+      #   value: ghcr.io/llm-d/llm-d-cuda-dev:latest
       - op: replace
         path: /spec/template/spec/containers/0/args/0
         value: |-
