@@ -2,14 +2,15 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ./gateway
-  # - ./vllm/overlays/preloaded
-  - ./vllm/overlays/runtime-loaded
+  - ./vllm/overlays/preloaded
+  # - ./vllm/overlays/runtime-loaded
   # - ./vllm/overlays/runtime-loaded-from-pv
-  - ./destination-rule.yaml
 
 helmCharts:
   - name: inferencepool
     repo: oci://registry.k8s.io/gateway-api-inference-extension/charts
     version: v1.3.0
     releaseName: llm-d-infpool
-    valuesFile: inference-pool-values.yaml
+    valuesFile: inferencepool/base/inferencepool-lora-serving-values.yaml
+    additionalValuesFiles:
+      - inferencepool/istio/inferencepool-istio-overrides.yaml
