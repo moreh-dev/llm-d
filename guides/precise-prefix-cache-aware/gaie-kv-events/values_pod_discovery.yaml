@@ -58,11 +58,9 @@ inferenceExtension:
         - type: precise-prefix-cache-scorer
           parameters:
             tokenProcessorConfig:
-              blockSize: 16
+              blockSize: 64
             indexerConfig:
               speculativeIndexing: true
-              tokenProcessorConfig:
-                blockSize: 16
               tokenizersPoolConfig:
                 modelName: Qwen/Qwen3-32B
                 local: null
