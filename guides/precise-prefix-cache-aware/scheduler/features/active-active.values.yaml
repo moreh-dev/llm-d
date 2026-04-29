@@ -81,8 +81,8 @@ inferenceExtension:
           parameters:
             tokenProcessorConfig:
               blockSize: 64
-              hashSeed: "42"
             indexerConfig:
+              speculativeIndexing: true
               tokenizersPoolConfig:
                 modelName: Qwen/Qwen3-32B
                 uds:

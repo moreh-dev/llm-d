@@ -79,8 +79,8 @@ inferenceExtension:
           parameters:
             tokenProcessorConfig:
               blockSize: 64           # must match vLLM --block-size
-              hashSeed: "42"          # must match vLLM PYTHONHASHSEED env var
             indexerConfig:
+              speculativeIndexing: true
               tokenizersPoolConfig:
                 modelName: Qwen/Qwen3-32B
                 uds:

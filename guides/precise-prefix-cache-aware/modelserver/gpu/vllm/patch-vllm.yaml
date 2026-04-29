@@ -39,10 +39,6 @@ spec:
             # patch this value to `<release-name>-epp`.
             - name: KV_EVENTS_ENDPOINT
               value: "tcp://precise-prefix-cache-aware-epp.$(NAMESPACE).svc.cluster.local:5556"
-            # Must match precise-prefix-cache-scorer tokenProcessorConfig.hashSeed
-            # so the in-EPP tokenizer produces the same block hashes that vLLM emits.
-            - name: PYTHONHASHSEED
-              value: "42"
             # Disable vLLM usage telemetry — its writes to /.config fail
             # under restricted SecurityContexts (e.g. OpenShift).
             - name: DO_NOT_TRACK
